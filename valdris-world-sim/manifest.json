@@ -1,0 +1,9 @@
+{
+  "name": "Valdris World Sim",
+  "version": "0.1.0",
+  "description": "Minimal extension that displays a panel and logs a console message.",
+  "author": "Valdris",
+  "license": "MIT",
+  "js": "index.js",
+  "css": "style.css"
+}
