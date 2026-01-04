@@ -305,6 +305,44 @@ const QUEST_PATTERNS = [
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
+// STATE MUTEX - Prevents race conditions in async state operations
+// ══════════════════════════════════════════════════════════════════════════════
+
+const stateMutex = {
+  _locked: false,
+  _queue: [],
+
+  async acquire() {
+    return new Promise((resolve) => {
+      if (!this._locked) {
+        this._locked = true;
+        resolve();
+      } else {
+        this._queue.push(resolve);
+      }
+    });
+  },
+
+  release() {
+    if (this._queue.length > 0) {
+      const next = this._queue.shift();
+      next();
+    } else {
+      this._locked = false;
+    }
+  },
+
+  async withLock(fn) {
+    await this.acquire();
+    try {
+      return await fn();
+    } finally {
+      this.release();
+    }
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -831,11 +869,13 @@ function togglePanel() {
 }
 
 async function rescanChat() {
-  const st = getChatState();
-  parseAllMessages(st);
-  await commitState(st);
-  emitUpdates({ contextUpdated: true }, st);
-  render();
+  await stateMutex.withLock(async () => {
+    const st = getChatState();
+    parseAllMessages(st);
+    await commitState(st);
+    emitUpdates({ contextUpdated: true }, st);
+    render();
+  });
 }
 
 function render() {
@@ -1028,36 +1068,42 @@ window.VJourney = {
   subscribe: (event, callback) => journeyEvents.subscribe(event, callback),
   EVENTS: JOURNEY_EVENTS,
   
-  // Manual controls
+  // Manual controls - all use mutex to prevent race conditions
   setLocation: async (location, terrain) => {
-    const st = getChatState();
-    st.currentLocation = location;
-    if (terrain) st.currentTerrain = terrain;
-    await commitState(st);
-    journeyEvents.emit(JOURNEY_EVENTS.LOCATION_CHANGED, { location, terrain });
-    journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
-    render();
+    await stateMutex.withLock(async () => {
+      const st = getChatState();
+      st.currentLocation = location;
+      if (terrain) st.currentTerrain = terrain;
+      await commitState(st);
+      journeyEvents.emit(JOURNEY_EVENTS.LOCATION_CHANGED, { location, terrain });
+      journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
+      render();
+    });
   },
-  
+
   setFaction: async (faction) => {
-    const st = getChatState();
-    st.currentFaction = faction;
-    if (!st.factionsEncountered.includes(faction)) {
-      st.factionsEncountered.push(faction);
-    }
-    await commitState(st);
-    journeyEvents.emit(JOURNEY_EVENTS.FACTION_ENCOUNTERED, { faction });
-    journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
-    render();
+    await stateMutex.withLock(async () => {
+      const st = getChatState();
+      st.currentFaction = faction;
+      if (!st.factionsEncountered.includes(faction)) {
+        st.factionsEncountered.push(faction);
+      }
+      await commitState(st);
+      journeyEvents.emit(JOURNEY_EVENTS.FACTION_ENCOUNTERED, { faction });
+      journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
+      render();
+    });
   },
-  
+
   setTerrain: async (terrain) => {
-    const st = getChatState();
-    st.currentTerrain = terrain;
-    await commitState(st);
-    journeyEvents.emit(JOURNEY_EVENTS.TERRAIN_CHANGED, { terrain });
-    journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
-    render();
+    await stateMutex.withLock(async () => {
+      const st = getChatState();
+      st.currentTerrain = terrain;
+      await commitState(st);
+      journeyEvents.emit(JOURNEY_EVENTS.TERRAIN_CHANGED, { terrain });
+      journeyEvents.emit(JOURNEY_EVENTS.CONTEXT_UPDATED, st);
+      render();
+    });
   },
   
   // Force rescan
@@ -1073,63 +1119,82 @@ window.VJourney = {
 // LIFECYCLE
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Wait for message to be available in chat with exponential backoff
+ */
+async function waitForMessage(msgIdx, maxAttempts = 5) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
+    if (ctx?.chat?.[msgIdx]?.mes) {
+      return ctx.chat[msgIdx];
+    }
+    // Exponential backoff: 50ms, 100ms, 200ms, 400ms, 800ms
+    await new Promise(r => setTimeout(r, 50 * Math.pow(2, attempt)));
+  }
+  return null;
+}
+
+/**
+ * Process a message with mutex protection to prevent race conditions
+ */
+async function processMessageSafe(msgIdx, source) {
+  await stateMutex.withLock(async () => {
+    try {
+      const st = getChatState();
+      if (!st.autoParseEnabled) return;
+
+      const msg = await waitForMessage(msgIdx);
+      if (!msg?.mes) return;
+
+      const updates = parseMessage(msg.mes, st);
+      await commitState(st);
+      emitUpdates(updates, st);
+
+      if (UI.panelOpen) render();
+    } catch (e) {
+      console.error(`[Journey] Parse error (${source}):`, e);
+    }
+  });
+}
+
 function registerEvents() {
   if (!eventSource || !event_types) return;
-  
+
   eventSource.on(event_types.CHAT_CHANGED, async () => {
     console.log('[Journey] Chat changed - rescanning');
-    const st = getChatState();
-    parseAllMessages(st);
-    await commitState(st);
-    emitUpdates({}, st);
-    if (UI.panelOpen) render();
+    await stateMutex.withLock(async () => {
+      const st = getChatState();
+      parseAllMessages(st);
+      await commitState(st);
+      emitUpdates({}, st);
+      if (UI.panelOpen) render();
+    });
   });
-  
+
   eventSource.on(event_types.MESSAGE_RECEIVED, async (msgIdx) => {
-    const st = getChatState();
-    if (!st.autoParseEnabled) return;
-    
-    setTimeout(async () => {
-      try {
-        const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-        if (!ctx?.chat) return;
-        
-        const msg = ctx.chat[msgIdx];
-        if (!msg?.mes) return;
-        
-        const updates = parseMessage(msg.mes, st);
-        await commitState(st);
-        emitUpdates(updates, st);
-        
-        if (UI.panelOpen) render();
-      } catch (e) {
-        console.error('[Journey] Parse error:', e);
-      }
-    }, 300);
+    // Use mutex to prevent race conditions with MESSAGE_SENT
+    await processMessageSafe(msgIdx, 'MESSAGE_RECEIVED');
   });
-  
+
   eventSource.on(event_types.MESSAGE_SENT, async (msgIdx) => {
-    const st = getChatState();
-    if (!st.autoParseEnabled) return;
-    
-    setTimeout(async () => {
-      try {
-        const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-        if (!ctx?.chat) return;
-        
-        const msg = ctx.chat[msgIdx];
-        if (!msg?.mes) return;
-        
-        const updates = parseMessage(msg.mes, st);
-        await commitState(st);
-        emitUpdates(updates, st);
-        
-        if (UI.panelOpen) render();
-      } catch (e) {
-        console.error('[Journey] Parse error:', e);
-      }
-    }, 300);
+    // Use mutex to prevent race conditions with MESSAGE_RECEIVED
+    await processMessageSafe(msgIdx, 'MESSAGE_SENT');
   });
+}
+
+/**
+ * Wait for SillyTavern context to be available
+ */
+async function waitForContext(maxAttempts = 10) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
+    if (ctx?.chat) {
+      return ctx;
+    }
+    // Wait with exponential backoff: 100ms, 200ms, 400ms...
+    await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
+  }
+  return null;
 }
 
 (async function main() {
@@ -1137,16 +1202,19 @@ function registerEvents() {
   try {
     mountUI();
     registerEvents();
-    
-    // Initial parse
-    setTimeout(async () => {
-      const st = getChatState();
-      parseAllMessages(st);
-      await commitState(st);
-      emitUpdates({}, st);
-      render();
-    }, 1000);
-    
+
+    // Initial parse - wait for context to be available instead of arbitrary timeout
+    const ctx = await waitForContext();
+    if (ctx) {
+      await stateMutex.withLock(async () => {
+        const st = getChatState();
+        parseAllMessages(st);
+        await commitState(st);
+        emitUpdates({}, st);
+        render();
+      });
+    }
+
     console.log('[Journey] Ready!');
   } catch (e) {
     console.error('[Journey] Init failed:', e);
