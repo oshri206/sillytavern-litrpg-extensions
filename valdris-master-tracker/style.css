@@ -3007,3 +3007,845 @@
 .vmt_custom_currency_row .vmt_modal_input:first-child {
     flex: 2;
 }
+
+/* ===== Reputation Tab ===== */
+.vmt_reputation_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_reputation_summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.vmt_reputation_summary .vmt_summary_item {
+    flex: 1;
+    min-width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_reputation_summary .vmt_summary_total {
+    border-bottom: 2px solid var(--vmt-accent);
+}
+
+.vmt_reputation_section {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.vmt_reputation_filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.vmt_reputation_list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_reputation_item {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+    border-left: 3px solid var(--vmt-accent);
+}
+
+.vmt_reputation_header_row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.vmt_reputation_name_section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt_reputation_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_reputation_rank_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_reputation_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_reputation_bar_container {
+    margin-bottom: 8px;
+}
+
+.vmt_reputation_bar {
+    position: relative;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.vmt_reputation_fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.vmt_reputation_bar_markers {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+    pointer-events: none;
+}
+
+.vmt_bar_marker {
+    position: absolute;
+    width: 2px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1px;
+}
+
+.vmt_reputation_score_display {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    margin-top: 4px;
+}
+
+.vmt_reputation_score_value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_reputation_score_range {
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_reputation_recent {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.vmt_reputation_recent_label {
+    color: var(--vmt-text-muted);
+}
+
+.vmt_reputation_change {
+    font-weight: 600;
+}
+
+.vmt_reputation_change.positive {
+    color: var(--vmt-positive);
+}
+
+.vmt_reputation_change.negative {
+    color: var(--vmt-negative);
+}
+
+.vmt_reputation_reason {
+    color: var(--vmt-text-secondary);
+}
+
+/* Reputation History Modal */
+.vmt_reputation_history_list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_history_item {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_history_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.vmt_history_change {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.vmt_history_change.positive {
+    color: var(--vmt-positive);
+}
+
+.vmt_history_change.negative {
+    color: var(--vmt-negative);
+}
+
+.vmt_history_scores {
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_history_reason {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+    margin-bottom: 4px;
+}
+
+.vmt_history_date {
+    font-size: 10px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_modal_current_score {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--vmt-text-accent);
+    text-align: center;
+    padding: 10px;
+}
+
+/* ===== Companions Tab ===== */
+.vmt_companions_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_companions_summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.vmt_companions_summary .vmt_summary_item {
+    flex: 1;
+    min-width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_summary_active {
+    border-bottom: 2px solid var(--vmt-positive);
+}
+
+.vmt_summary_pet {
+    border-bottom: 2px solid #ffaa44;
+}
+
+.vmt_summary_summon {
+    border-bottom: 2px solid #b380ff;
+}
+
+.vmt_summary_hireling {
+    border-bottom: 2px solid #5588ee;
+}
+
+.vmt_summary_mount {
+    border-bottom: 2px solid #66cc77;
+}
+
+.vmt_companions_section {
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.vmt_companions_filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.vmt_filter_group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vmt_filter_label {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_companions_list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vmt_companion_card {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius);
+    border-left: 3px solid var(--vmt-accent);
+}
+
+.vmt_companion_pet {
+    border-left-color: #ffaa44;
+}
+
+.vmt_companion_summon {
+    border-left-color: #b380ff;
+}
+
+.vmt_companion_hireling {
+    border-left-color: #5588ee;
+}
+
+.vmt_companion_mount {
+    border-left-color: #66cc77;
+}
+
+.vmt_companion_header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.vmt_companion_portrait {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--vmt-radius-sm);
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.vmt_companion_portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vmt_portrait_placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_companion_info {
+    flex: 1;
+}
+
+.vmt_companion_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+    margin-bottom: 4px;
+}
+
+.vmt_companion_type_row {
+    display: flex;
+    gap: 6px;
+}
+
+.vmt_companion_type_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(140, 70, 255, 0.2);
+    color: var(--vmt-text-accent);
+}
+
+.vmt_companion_status_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid;
+}
+
+.vmt_companion_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_companion_stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_companion_stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.vmt_stat_label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--vmt-text-muted);
+    text-transform: uppercase;
+}
+
+.vmt_stat_value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_stat_hp {
+    color: var(--vmt-hp);
+}
+
+.vmt_companion_bond {
+    margin-bottom: 8px;
+}
+
+.vmt_bond_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.vmt_bond_label {
+    font-size: 10px;
+    color: var(--vmt-text-muted);
+    text-transform: uppercase;
+}
+
+.vmt_bond_level {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.vmt_bond_bar {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.vmt_bond_fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.vmt_companion_abilities {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    margin-bottom: 6px;
+}
+
+.vmt_abilities_label {
+    color: var(--vmt-text-muted);
+}
+
+.vmt_abilities_text {
+    color: var(--vmt-positive);
+}
+
+.vmt_companion_notes {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    font-style: italic;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.vmt_companion_status_controls {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.vmt_status_select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--vmt-border-subtle);
+    background: var(--vmt-bg-input);
+    color: var(--vmt-text-primary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+/* ===== Achievements Tab ===== */
+.vmt_achievements_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_achievements_summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.vmt_achievements_summary .vmt_summary_item {
+    flex: 1;
+    min-width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_achievements_summary .vmt_summary_total {
+    border-bottom: 2px solid var(--vmt-accent);
+}
+
+.vmt_summary_icon {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.vmt_summary_sublabel {
+    font-size: 9px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_achievements_section {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.vmt_achievements_filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.vmt_achievements_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_achievement_category_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+}
+
+.vmt_achievement_category_header:first-child {
+    margin-top: 0;
+}
+
+.vmt_category_icon {
+    font-size: 14px;
+}
+
+.vmt_achievement_item {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+    border-left: 3px solid var(--vmt-text-muted);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.vmt_achievement_unlocked {
+    opacity: 1;
+}
+
+.vmt_achievement_locked {
+    opacity: 0.6;
+}
+
+.vmt_achievement_header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.vmt_achievement_icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.vmt_achievement_info {
+    flex: 1;
+}
+
+.vmt_achievement_name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+    margin-bottom: 2px;
+}
+
+.vmt_achievement_desc {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    line-height: 1.4;
+}
+
+.vmt_achievement_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_btn_success {
+    color: var(--vmt-positive);
+}
+
+.vmt_btn_success:hover {
+    background: rgba(102, 221, 136, 0.2);
+    border-color: var(--vmt-positive);
+}
+
+.vmt_achievement_progress {
+    margin-bottom: 8px;
+}
+
+.vmt_achievement_progress_bar {
+    height: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.vmt_achievement_progress_fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.vmt_achievement_progress_text {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_progress_input {
+    width: 50px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--vmt-border-subtle);
+    background: var(--vmt-bg-input);
+    color: var(--vmt-text-primary);
+    font-size: 11px;
+    text-align: center;
+}
+
+.vmt_achievement_meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.vmt_achievement_category_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_achievement_unlock_date {
+    font-size: 10px;
+    color: var(--vmt-positive);
+}
+
+.vmt_achievement_rewards {
+    font-size: 10px;
+    color: var(--vmt-xp);
+}
+
+/* ===== Affinities Tab ===== */
+.vmt_affinities_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_affinities_summary {
+    display: flex;
+    gap: 8px;
+}
+
+.vmt_affinities_summary .vmt_summary_item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_affinities_section {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.vmt_affinities_list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_affinity_item {
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--vmt-radius-sm);
+}
+
+.vmt_affinity_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.vmt_affinity_icon {
+    font-size: 18px;
+}
+
+.vmt_affinity_name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_affinity_level {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.vmt_affinity_bar_container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.vmt_affinity_bar {
+    flex: 1;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.vmt_affinity_fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.vmt_affinity_controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.vmt_affinity_input {
+    width: 45px;
+    padding: 3px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--vmt-border-subtle);
+    background: var(--vmt-bg-input);
+    color: var(--vmt-text-primary);
+    font-size: 12px;
+    text-align: center;
+}
+
+.vmt_affinity_percent {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_affinity_notes {
+    margin-top: 4px;
+}
+
+.vmt_affinity_notes_input {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--vmt-border-subtle);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--vmt-text-secondary);
+    font-size: 11px;
+}
+
+.vmt_affinity_notes_input:focus {
+    outline: none;
+    border-color: var(--vmt-border-accent);
+}
+
+.vmt_affinity_notes_input::placeholder {
+    color: var(--vmt-text-muted);
+}
+
+.vmt_affinities_actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--vmt-border-subtle);
+}
+
+/* Color input styling */
+.vmt_color_input {
+    padding: 4px;
+    height: 40px;
+    cursor: pointer;
+}

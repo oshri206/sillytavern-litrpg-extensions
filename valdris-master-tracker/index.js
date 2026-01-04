@@ -28,6 +28,10 @@ import { renderTitlesTab } from './tabs/titles.js';
 import { renderModifiersTab } from './tabs/modifiers.js';
 import { renderEquipmentTab } from './tabs/equipment.js';
 import { renderInventoryTab } from './tabs/inventory.js';
+import { renderReputationTab } from './tabs/reputation.js';
+import { renderCompanionsTab } from './tabs/companions.js';
+import { renderAchievementsTab } from './tabs/achievements.js';
+import { renderAffinitiesTab } from './tabs/affinities.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -76,7 +80,11 @@ const TABS = [
     { key: 'titles', label: 'Titles', icon: '' },
     { key: 'modifiers', label: 'Modifiers', icon: '' },
     { key: 'equipment', label: 'Equipment', icon: '' },
-    { key: 'inventory', label: 'Inventory', icon: '' }
+    { key: 'inventory', label: 'Inventory', icon: '' },
+    { key: 'reputation', label: 'Reputation', icon: '' },
+    { key: 'companions', label: 'Companions', icon: '' },
+    { key: 'achievements', label: 'Achievements', icon: '' },
+    { key: 'affinities', label: 'Affinities', icon: '' }
 ];
 
 // Cleanup tracking
@@ -1553,6 +1561,457 @@ function openModal(type, data = {}) {
             );
             break;
 
+        // ===== Reputation Modals =====
+        case 'add-faction':
+        case 'edit-faction':
+            titleEl.textContent = type === 'add-faction' ? 'Add Faction' : 'Edit Faction';
+            const faction = data.faction || { name: '', score: 0 };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Faction Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_faction_name',
+                        value: faction.name,
+                        placeholder: 'e.g., The Silver Hand'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Starting Reputation Score (-100 to 100)'),
+                    h('input', {
+                        type: 'number',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_faction_score',
+                        value: faction.score || 0,
+                        min: -100,
+                        max: 100
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newFaction = {
+                            name: document.getElementById('vmt_faction_name').value.trim(),
+                            score: parseInt(document.getElementById('vmt_faction_score').value, 10) || 0
+                        };
+                        if (newFaction.name) {
+                            data.onSave(newFaction);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        case 'add-reputation-change':
+            titleEl.textContent = `Add Reputation Change - ${data.faction?.name || 'Faction'}`;
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Current Score'),
+                    h('div', { class: 'vmt_modal_current_score' }, String(data.faction?.score || 0))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Change Amount'),
+                    h('input', {
+                        type: 'number',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_rep_change',
+                        value: 0,
+                        min: -200,
+                        max: 200,
+                        placeholder: 'e.g., +10 or -5'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Reason'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_rep_reason',
+                        placeholder: 'e.g., Completed quest for the guild'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const change = parseInt(document.getElementById('vmt_rep_change').value, 10) || 0;
+                        const reason = document.getElementById('vmt_rep_reason').value.trim() || 'No reason given';
+                        data.onSave({ change, reason });
+                        closeModal();
+                    }
+                }, 'Apply')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        case 'view-reputation-history':
+            titleEl.textContent = `History - ${data.faction?.name || 'Faction'}`;
+            const historyList = h('div', { class: 'vmt_reputation_history_list' });
+            const history = data.faction?.history || [];
+            if (history.length === 0) {
+                historyList.appendChild(h('div', { class: 'vmt_empty' }, 'No history recorded'));
+            } else {
+                history.forEach(entry => {
+                    const date = new Date(entry.timestamp);
+                    historyList.appendChild(
+                        h('div', { class: 'vmt_history_item' },
+                            h('div', { class: 'vmt_history_header' },
+                                h('span', { class: `vmt_history_change ${entry.change >= 0 ? 'positive' : 'negative'}` },
+                                    `${entry.change >= 0 ? '+' : ''}${entry.change}`
+                                ),
+                                h('span', { class: 'vmt_history_scores' }, `${entry.previousScore} → ${entry.newScore}`)
+                            ),
+                            h('div', { class: 'vmt_history_reason' }, entry.reason),
+                            h('div', { class: 'vmt_history_date' }, date.toLocaleString())
+                        )
+                    );
+                });
+            }
+            bodyEl.appendChild(historyList);
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Close')
+            );
+            break;
+
+        // ===== Companion Modals =====
+        case 'add-companion':
+        case 'edit-companion':
+            titleEl.textContent = type === 'add-companion' ? 'Add Companion' : 'Edit Companion';
+            const companion = data.companion || {
+                name: '', type: 'Pet', status: 'With Party',
+                hp: { current: 10, max: 10 }, attack: '', defense: '',
+                abilities: '', bond: 50, portrait: '', notes: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_companion_name',
+                        value: companion.name,
+                        placeholder: 'e.g., Shadow'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Type'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_companion_type' },
+                            ['Pet', 'Summon', 'Hireling', 'Mount'].map(t =>
+                                h('option', { value: t, selected: companion.type === t ? 'selected' : null }, t)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Status'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_companion_status' },
+                            ['With Party', 'Stabled', 'Dismissed', 'Dead', 'Missing'].map(s =>
+                                h('option', { value: s, selected: companion.status === s ? 'selected' : null }, s)
+                            )
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Current HP'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_companion_hp_current',
+                            value: companion.hp?.current || 10,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Max HP'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_companion_hp_max',
+                            value: companion.hp?.max || 10,
+                            min: 1
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Bond (0-100)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_companion_bond',
+                            value: companion.bond || 50,
+                            min: 0,
+                            max: 100
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Attack'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_companion_attack',
+                            value: companion.attack || '',
+                            placeholder: 'e.g., 1d6+2'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Defense'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_companion_defense',
+                            value: companion.defense || '',
+                            placeholder: 'e.g., 12'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Abilities'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_companion_abilities',
+                        value: companion.abilities || '',
+                        placeholder: 'e.g., Bite, Track, Night Vision'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Portrait URL'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_companion_portrait',
+                        value: companion.portrait || '',
+                        placeholder: 'https://...'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_companion_notes',
+                        placeholder: 'Additional notes...'
+                    }, companion.notes || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newCompanion = {
+                            name: document.getElementById('vmt_companion_name').value.trim(),
+                            type: document.getElementById('vmt_companion_type').value,
+                            status: document.getElementById('vmt_companion_status').value,
+                            hp: {
+                                current: parseInt(document.getElementById('vmt_companion_hp_current').value, 10) || 10,
+                                max: parseInt(document.getElementById('vmt_companion_hp_max').value, 10) || 10
+                            },
+                            bond: parseInt(document.getElementById('vmt_companion_bond').value, 10) || 50,
+                            attack: document.getElementById('vmt_companion_attack').value.trim(),
+                            defense: document.getElementById('vmt_companion_defense').value.trim(),
+                            abilities: document.getElementById('vmt_companion_abilities').value.trim(),
+                            portrait: document.getElementById('vmt_companion_portrait').value.trim(),
+                            notes: document.getElementById('vmt_companion_notes').value.trim()
+                        };
+                        if (newCompanion.name) {
+                            data.onSave(newCompanion);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Achievement Modals =====
+        case 'add-achievement':
+        case 'edit-achievement':
+            titleEl.textContent = type === 'add-achievement' ? 'Add Achievement' : 'Edit Achievement';
+            const achievement = data.achievement || {
+                name: '', description: '', category: 'Combat',
+                progressMax: 0, rewards: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Achievement Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_achievement_name',
+                        value: achievement.name,
+                        placeholder: 'e.g., Dragon Slayer'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_achievement_desc',
+                        placeholder: 'Describe the achievement...'
+                    }, achievement.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Category'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_achievement_category' },
+                            ['Combat', 'Exploration', 'Social', 'Crafting', 'Hidden'].map(cat =>
+                                h('option', { value: cat, selected: achievement.category === cat ? 'selected' : null }, cat)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Progress Max (0 = no tracking)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_achievement_progress',
+                            value: achievement.progressMax || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Rewards'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_achievement_rewards',
+                        value: achievement.rewards || '',
+                        placeholder: 'e.g., +10 STR, Dragon Title'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newAchievement = {
+                            name: document.getElementById('vmt_achievement_name').value.trim(),
+                            description: document.getElementById('vmt_achievement_desc').value.trim(),
+                            category: document.getElementById('vmt_achievement_category').value,
+                            progressMax: parseInt(document.getElementById('vmt_achievement_progress').value, 10) || 0,
+                            rewards: document.getElementById('vmt_achievement_rewards').value.trim()
+                        };
+                        if (newAchievement.name) {
+                            data.onSave(newAchievement);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Affinity Modals =====
+        case 'add-affinity':
+            titleEl.textContent = 'Add Custom Affinity';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Affinity Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_affinity_name',
+                        placeholder: 'e.g., Void, Psychic, Blood'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Starting Value (0-100)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_affinity_value',
+                            value: 0,
+                            min: 0,
+                            max: 100
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Color'),
+                        h('input', {
+                            type: 'color',
+                            class: 'vmt_modal_input vmt_color_input',
+                            id: 'vmt_affinity_color',
+                            value: '#888888'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes/Effects'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_affinity_notes',
+                        placeholder: 'What this affinity affects...'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newAffinity = {
+                            name: document.getElementById('vmt_affinity_name').value.trim(),
+                            value: parseInt(document.getElementById('vmt_affinity_value').value, 10) || 0,
+                            color: document.getElementById('vmt_affinity_color').value,
+                            notes: document.getElementById('vmt_affinity_notes').value.trim()
+                        };
+                        if (newAffinity.name) {
+                            data.onSave(newAffinity);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
         default:
             titleEl.textContent = 'Modal';
             bodyEl.textContent = 'Unknown modal type';
@@ -1620,6 +2079,18 @@ function render() {
             break;
         case 'inventory':
             body.appendChild(renderInventoryTab(openModal, render));
+            break;
+        case 'reputation':
+            body.appendChild(renderReputationTab(openModal, render));
+            break;
+        case 'companions':
+            body.appendChild(renderCompanionsTab(openModal, render));
+            break;
+        case 'achievements':
+            body.appendChild(renderAchievementsTab(openModal, render));
+            break;
+        case 'affinities':
+            body.appendChild(renderAffinitiesTab(openModal, render));
             break;
         default:
             body.textContent = 'Unknown tab';
