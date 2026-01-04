@@ -95,16 +95,41 @@ function newEmptyState() {
       SP: { cur: null, max: null },
       XP: { cur: 0, next: null },
       currencies: { Gold: 0, Silver: 0, Copper: 0 },
+      customCurrencies: [], // {name, amount}
       regenPerMinute: { HP: null, MP: null, SP: null },
     },
     traits: [],        // {name,type,description,effect}
-    titles: [],        // {name,description,effect,rarity}
-    modifiers: [],     // {name,description,expires,effects}
-    inventory: [],     // {name,qty,notes}
-    equipment: {       // slots -> {name,notes,mods}
-      head: null, face: null, neck: null, shoulders: null, chest: null, back: null,
-      wrists: null, hands: null, waist: null, legs: null, feet: null,
-      mainhand: null, offhand: null, ring1: null, ring2: null, accessory: null
+    // Enhanced titles: {name, description, effect, source, rarity, isActive}
+    titles: [],
+    activeTitle: null, // name of the currently active title
+    // Enhanced modifiers with categories
+    modifiers: {
+      permanent: [],   // {name, effect, value, source, type:'buff'|'debuff'}
+      temporary: [],   // {name, effect, value, source, duration, remainingTime, type:'buff'|'debuff'}
+      conditional: [], // {name, effect, value, source, condition, type:'buff'|'debuff'}
+    },
+    resistances: {     // percentage or flat value
+      Fire: 0, Ice: 0, Lightning: 0, Poison: 0,
+      Holy: 0, Shadow: 0, Physical: 0, Arcane: 0,
+    },
+    statusImmunities: [], // array of status names character is immune to
+    // Enhanced inventory: {name, qty, weight, value, category, description, rarity, isEquippable, equipSlot}
+    inventory: [],
+    inventorySettings: {
+      viewMode: 'grid', // 'grid' or 'list'
+      weightCapacity: { current: 0, max: 100 },
+      categoryFilter: 'All',
+      searchQuery: '',
+    },
+    // Enhanced equipment with more slots
+    equipment: {
+      // Armor
+      head: null, chest: null, hands: null, legs: null, feet: null, back: null,
+      // Weapons
+      mainhand: null, offhand: null,
+      // Accessories
+      ring1: null, ring2: null, amulet: null,
+      accessory1: null, accessory2: null, accessory3: null,
     },
     skills: [],        // {name,level,description,effect}
     spells: [],        // {name,description,defaultMana,currentMana,defaultEffect,currentEffect,school,level,cooldown,range,tags}
@@ -185,7 +210,98 @@ function getChatState() {
   if (!md[META_KEY]) md[META_KEY] = newEmptyState();
   // Upgrade path if needed
   if (!md[META_KEY].version || md[META_KEY].version < 4) md[META_KEY] = newEmptyState();
+  // Migrate old state format to new enhanced format
+  migrateState(md[META_KEY]);
   return md[META_KEY];
+}
+
+function migrateState(st) {
+  // Migrate modifiers from array to object structure
+  if (Array.isArray(st.modifiers)) {
+    const oldMods = st.modifiers;
+    st.modifiers = {
+      permanent: [],
+      temporary: oldMods.map(m => ({
+        name: m.name,
+        effect: m.effects || m.description || '',
+        value: '',
+        source: '',
+        duration: m.expires || '',
+        remainingTime: '',
+        type: 'buff',
+      })),
+      conditional: [],
+    };
+  }
+  // Ensure modifiers structure exists
+  if (!st.modifiers || typeof st.modifiers !== 'object') {
+    st.modifiers = { permanent: [], temporary: [], conditional: [] };
+  }
+  st.modifiers.permanent = st.modifiers.permanent || [];
+  st.modifiers.temporary = st.modifiers.temporary || [];
+  st.modifiers.conditional = st.modifiers.conditional || [];
+
+  // Ensure activeTitle exists
+  if (st.activeTitle === undefined) st.activeTitle = null;
+
+  // Ensure resistances exist
+  if (!st.resistances) {
+    st.resistances = { Fire: 0, Ice: 0, Lightning: 0, Poison: 0, Holy: 0, Shadow: 0, Physical: 0, Arcane: 0 };
+  }
+
+  // Ensure statusImmunities exist
+  if (!st.statusImmunities) st.statusImmunities = [];
+
+  // Ensure inventorySettings exist
+  if (!st.inventorySettings) {
+    st.inventorySettings = {
+      viewMode: 'grid',
+      weightCapacity: { current: 0, max: 100 },
+      categoryFilter: 'All',
+      searchQuery: '',
+    };
+  }
+
+  // Ensure customCurrencies exist
+  if (!st.resources.customCurrencies) st.resources.customCurrencies = [];
+
+  // Migrate equipment slots
+  const newEquipSlots = ['head', 'chest', 'hands', 'legs', 'feet', 'back', 'mainhand', 'offhand', 'ring1', 'ring2', 'amulet', 'accessory1', 'accessory2', 'accessory3'];
+  for (const slot of newEquipSlots) {
+    if (st.equipment[slot] === undefined) st.equipment[slot] = null;
+  }
+
+  // Migrate inventory items to enhanced format
+  st.inventory = st.inventory.map(item => {
+    if (typeof item === 'object' && item !== null) {
+      return {
+        name: item.name || '',
+        qty: item.qty ?? 1,
+        weight: item.weight ?? 0,
+        value: item.value ?? 0,
+        category: item.category || 'Misc',
+        description: item.description || item.notes || '',
+        rarity: item.rarity || 'Common',
+        isEquippable: item.isEquippable ?? false,
+        equipSlot: item.equipSlot || null,
+      };
+    }
+    return item;
+  });
+
+  // Migrate titles to enhanced format
+  st.titles = st.titles.map(title => {
+    if (typeof title === 'object' && title !== null) {
+      return {
+        name: title.name || '',
+        description: title.description || '',
+        effect: title.effect || '',
+        source: title.source || '',
+        rarity: title.rarity || 'Common',
+      };
+    }
+    return title;
+  });
 }
 
 async function commitState(state) {
@@ -540,13 +656,25 @@ function renderCharacter(st) {
   const r = st.resources;
   const s = st.stats;
 
+  // Active title display
+  const activeTitle = st.titles.find(t => t.name === st.activeTitle);
+  const activeTitleEl = activeTitle
+    ? h('div', { class: 'vct4_active_title_display' },
+        h('div', { class: 'vct4_active_title_label' }, 'Active Title'),
+        h('div', { class: 'vct4_active_title_name' }, activeTitle.name),
+        activeTitle.effect ? h('div', { class: 'vct4_active_title_effect' }, activeTitle.effect) : null,
+      )
+    : null;
+
   const header = h('div', { class: 'vct4_section' },
     h('div', { class: 'vct4_h2' }, 'Profile'),
+    activeTitleEl,
     renderKeyValueTable([
       ['Name', c.name],
       ['Class', c.class],
       ['Race', c.race],
       ['Level', c.level],
+      ['Title', st.activeTitle || '—'],
       ['Location', st.locations.current || c.location || '—'],
     ]),
   );
@@ -592,75 +720,282 @@ function renderTraits(st) {
 }
 
 function renderTitles(st) {
-  return h('div', { class: 'vct4_tab_content' },
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Titles'),
-      renderList(st.titles, (t) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, t.name, t.rarity ? pill(t.rarity) : ''),
-          t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
-          t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null,
-        ), 'No titles loaded. Click Populate.'
-      ),
-    )
+  const wrap = h('div', { class: 'vct4_tab_content' });
+
+  // Toolbar with Add button
+  const toolbar = h('div', { class: 'vct4_toolbar' },
+    h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => openTitleModal(st, null) }, '+ Add Title'),
+    h('div', { class: 'vct4_toolbar_spacer' }),
   );
+  wrap.appendChild(toolbar);
+
+  // Active Title Section
+  const activeTitle = st.titles.find(t => t.name === st.activeTitle);
+  const activeSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Active Title'),
+    activeTitle
+      ? h('div', { class: 'vct4_active_title_display' },
+          h('div', { class: 'vct4_active_title_label' }, 'Currently Active'),
+          h('div', { class: 'vct4_active_title_name' }, activeTitle.name),
+          activeTitle.effect ? h('div', { class: 'vct4_active_title_effect' }, activeTitle.effect) : null,
+          h('button', { class: 'vct4_btn vct4_btn_small', style: 'margin-top: 8px;', onclick: async () => {
+            st.activeTitle = null;
+            await commitState(st);
+            render();
+            updateInjection();
+          }}, 'Unequip'),
+        )
+      : h('div', { class: 'vct4_empty' }, 'No active title. Click a title below to activate it.'),
+  );
+  wrap.appendChild(activeSec);
+
+  // All Titles Section
+  const titlesSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, `All Titles (${st.titles.length})`),
+  );
+
+  if (st.titles.length === 0) {
+    titlesSec.appendChild(h('div', { class: 'vct4_empty' }, 'No titles. Click "Add Title" or "Populate" to add titles.'));
+  } else {
+    const list = h('div', { class: 'vct4_list' });
+    for (const t of st.titles) {
+      const isActive = t.name === st.activeTitle;
+      const rarityClass = `vct4_rarity_${(t.rarity || 'common').toLowerCase()}`;
+      const card = h('div', { class: `vct4_card ${rarityClass} ${isActive ? 'vct4_title_active' : ''}` },
+        h('div', { class: 'vct4_card_title' },
+          h('span', {}, t.name),
+          t.rarity ? h('span', { class: `vct4_pill ${rarityClass}` }, t.rarity) : null,
+          t.source ? h('span', { class: 'vct4_pill' }, t.source) : null,
+        ),
+        t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
+        t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null,
+        h('div', { class: 'vct4_row', style: 'margin-top: 8px;' },
+          !isActive
+            ? h('button', { class: 'vct4_btn vct4_btn_small vct4_btn_success', onclick: async () => {
+                st.activeTitle = t.name;
+                await commitState(st);
+                render();
+                updateInjection();
+              }}, 'Set Active')
+            : h('span', { class: 'vct4_pill', style: 'background: rgba(243,156,18,.2); border-color: rgba(243,156,18,.4);' }, 'Active'),
+          h('button', { class: 'vct4_btn vct4_btn_small', onclick: () => openTitleModal(st, t) }, 'Edit'),
+          h('button', { class: 'vct4_btn vct4_btn_small vct4_btn_warn', onclick: async () => {
+            if (confirm(`Delete title "${t.name}"?`)) {
+              st.titles = st.titles.filter(x => x.name !== t.name);
+              if (st.activeTitle === t.name) st.activeTitle = null;
+              await commitState(st);
+              render();
+              updateInjection();
+            }
+          }}, 'Delete'),
+        ),
+      );
+      list.appendChild(card);
+    }
+    titlesSec.appendChild(list);
+  }
+  wrap.appendChild(titlesSec);
+
+  return wrap;
+}
+
+// Title Modal for Add/Edit
+function openTitleModal(st, existingTitle) {
+  const isEdit = !!existingTitle;
+  const title = existingTitle ? { ...existingTitle } : { name: '', description: '', effect: '', source: '', rarity: 'Common' };
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, isEdit ? 'Edit Title' : 'Add Title'),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Name'),
+        h('input', { class: 'vct4_input', type: 'text', value: title.name, oninput: (e) => title.name = e.target.value }),
+      ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Description'),
+        h('textarea', { class: 'vct4_textarea', oninput: (e) => title.description = e.target.value }, title.description),
+      ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Effect/Bonuses'),
+        h('textarea', { class: 'vct4_textarea', oninput: (e) => title.effect = e.target.value }, title.effect),
+      ),
+      h('div', { class: 'vct4_form_row' },
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Source (How Obtained)'),
+          h('input', { class: 'vct4_input', type: 'text', value: title.source || '', oninput: (e) => title.source = e.target.value }),
+        ),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Rarity'),
+          createRaritySelect(title.rarity, (val) => title.rarity = val),
+        ),
+      ),
+      h('div', { class: 'vct4_item_modal_actions' },
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+          if (!title.name.trim()) { alert('Name is required.'); return; }
+          if (isEdit) {
+            const idx = st.titles.findIndex(t => t.name === existingTitle.name);
+            if (idx !== -1) st.titles[idx] = title;
+            if (st.activeTitle === existingTitle.name && existingTitle.name !== title.name) {
+              st.activeTitle = title.name;
+            }
+          } else {
+            st.titles.push(title);
+          }
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, isEdit ? 'Save' : 'Add'),
+      ),
+    ),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function createRaritySelect(currentValue, onChange) {
+  const rarities = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+  const select = h('select', { class: 'vct4_select', onchange: (e) => onChange(e.target.value) });
+  for (const r of rarities) {
+    const opt = h('option', { value: r }, r);
+    if (r === currentValue) opt.selected = true;
+    select.appendChild(opt);
+  }
+  return select;
 }
 
 
 function renderModifiers(st) {
   const wrap = h('div', { class: 'vct4_tab_content' });
 
-  // Permanent effects = traits + titles + class baseline + equipment notes (if any)
-  const permanent = [];
-  permanent.push({ name: `Class: ${st.character.class || '—'}`, description: 'Baseline class features apply.', expires: 'Permanent', effects: '' });
+  // Buff/Debuff filter state (local)
+  let filterType = 'all'; // 'all', 'buff', 'debuff'
 
-  for (const t of (st.traits || [])) {
-    permanent.push({ name: `Trait: ${t.name}`, description: t.description || '', expires: 'Permanent', effects: t.effect || '' });
-  }
-  for (const t of (st.titles || [])) {
-    permanent.push({ name: `Title: ${t.name}`, description: t.description || '', expires: 'Permanent', effects: t.effect || '' });
-  }
-
-  // Equipment as passive modifiers (if present)
-  const eq = [];
-  for (const [slot, item] of Object.entries(st.equipment || {})) {
-    if (!item) continue;
-    eq.push({ name: `${slot.toUpperCase()}: ${item.name}`, description: item.notes || '', expires: 'Equipped', effects: item.mods || '' });
-  }
-  if (eq.length) {
-    permanent.push(...eq);
-  }
-
-  // Temporary modifiers/statuses
-  const temporary = (st.modifiers || []).map(m => ({ ...m, expires: m.expires || 'Temporary' }));
-
-  wrap.appendChild(
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Permanent Effects'),
-      renderList(permanent, (m) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, m.name, m.expires ? pill(m.expires) : ''),
-          m.description ? h('div', { class: 'vct4_card_text' }, m.description) : null,
-          m.effects ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effects: ${m.effects}`) : null,
-        ),
-        'No permanent effects found. Click Populate.'
-      ),
-    )
+  // Toolbar
+  const toolbar = h('div', { class: 'vct4_toolbar' },
+    h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => openModifierModal(st, null, 'permanent') }, '+ Permanent'),
+    h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => openModifierModal(st, null, 'temporary') }, '+ Temporary'),
+    h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => openModifierModal(st, null, 'conditional') }, '+ Conditional'),
   );
+  wrap.appendChild(toolbar);
 
-  wrap.appendChild(
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Temporary Buffs / Debuffs'),
-      renderList(temporary, (m) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, m.name, m.expires ? pill(m.expires) : ''),
-          m.description ? h('div', { class: 'vct4_card_text' }, m.description) : null,
-          m.effects ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effects: ${m.effects}`) : null,
-        ),
-        'No temporary modifiers.'
-      ),
-    )
+  // Render modifier section helper
+  const renderModSection = (title, icon, mods, category) => {
+    const section = h('div', { class: 'vct4_mod_section' });
+    const header = h('div', { class: 'vct4_mod_section_header' },
+      h('span', {}, `${icon} ${title}`),
+      h('span', { class: 'vct4_mod_section_count' }, mods.length),
+    );
+    section.appendChild(header);
+
+    const body = h('div', { class: 'vct4_mod_section_body' });
+    if (mods.length === 0) {
+      body.appendChild(h('div', { class: 'vct4_empty' }, `No ${title.toLowerCase()}.`));
+    } else {
+      for (const m of mods) {
+        const isBuff = m.type !== 'debuff';
+        const card = h('div', { class: `vct4_card ${isBuff ? 'vct4_buff' : 'vct4_debuff'}` },
+          h('div', { class: 'vct4_card_title' },
+            h('span', {}, m.name),
+            h('span', { class: 'vct4_pill' }, isBuff ? 'Buff' : 'Debuff'),
+            m.value ? h('span', { class: 'vct4_pill' }, m.value) : null,
+          ),
+          m.effect ? h('div', { class: 'vct4_card_text' }, m.effect) : null,
+          m.source ? h('div', { class: 'vct4_card_text vct4_dim' }, `Source: ${m.source}`) : null,
+          category === 'temporary' && m.duration
+            ? h('div', { class: 'vct4_card_text vct4_dim' }, `Duration: ${m.duration}${m.remainingTime ? ` (${m.remainingTime} remaining)` : ''}`)
+            : null,
+          category === 'conditional' && m.condition
+            ? h('div', { class: 'vct4_card_text vct4_dim' }, `Trigger: ${m.condition}`)
+            : null,
+          h('div', { class: 'vct4_row', style: 'margin-top: 8px;' },
+            h('button', { class: 'vct4_btn vct4_btn_small', onclick: () => openModifierModal(st, m, category) }, 'Edit'),
+            h('button', { class: 'vct4_btn vct4_btn_small vct4_btn_warn', onclick: async () => {
+              if (confirm(`Delete modifier "${m.name}"?`)) {
+                st.modifiers[category] = st.modifiers[category].filter(x => x !== m);
+                await commitState(st);
+                render();
+                updateInjection();
+              }
+            }}, 'Delete'),
+          ),
+        );
+        body.appendChild(card);
+      }
+    }
+    section.appendChild(body);
+    return section;
+  };
+
+  // Permanent Modifiers
+  wrap.appendChild(renderModSection('Permanent Modifiers', '🔒', st.modifiers.permanent, 'permanent'));
+
+  // Temporary Modifiers
+  wrap.appendChild(renderModSection('Temporary Modifiers', '⏱️', st.modifiers.temporary, 'temporary'));
+
+  // Conditional Modifiers
+  wrap.appendChild(renderModSection('Conditional Modifiers', '⚡', st.modifiers.conditional, 'conditional'));
+
+  // Resistances Section
+  const resistSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Resistances'),
   );
+  const resistGrid = h('div', { class: 'vct4_resist_grid' });
+  const resistIcons = {
+    Fire: '🔥', Ice: '❄️', Lightning: '⚡', Poison: '☠️',
+    Holy: '✨', Shadow: '🌑', Physical: '🛡️', Arcane: '🔮',
+  };
+  for (const [type, value] of Object.entries(st.resistances)) {
+    const numVal = Number(value) || 0;
+    const valClass = numVal > 0 ? 'vct4_resist_positive' : numVal < 0 ? 'vct4_resist_negative' : '';
+    const item = h('div', { class: 'vct4_resist_item', onclick: () => openResistanceModal(st, type) },
+      h('span', { class: 'vct4_resist_icon' }, resistIcons[type] || ''),
+      h('span', { class: 'vct4_resist_name' }, type),
+      h('span', { class: `vct4_resist_value ${valClass}` }, `${numVal >= 0 ? '+' : ''}${numVal}%`),
+    );
+    resistGrid.appendChild(item);
+  }
+  resistSec.appendChild(resistGrid);
+  wrap.appendChild(resistSec);
+
+  // Status Immunities Section
+  const immuneSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Status Immunities'),
+  );
+  const immuneWrap = h('div', { class: 'vct4_immunities' });
+  if (st.statusImmunities.length === 0) {
+    immuneWrap.appendChild(h('span', { class: 'vct4_dim' }, 'No immunities.'));
+  } else {
+    for (const imm of st.statusImmunities) {
+      const tag = h('div', { class: 'vct4_immunity_tag' },
+        h('span', {}, imm),
+        h('span', { class: 'vct4_immunity_remove', onclick: async () => {
+          st.statusImmunities = st.statusImmunities.filter(x => x !== imm);
+          await commitState(st);
+          render();
+          updateInjection();
+        }}, '✕'),
+      );
+      immuneWrap.appendChild(tag);
+    }
+  }
+  immuneWrap.appendChild(
+    h('button', { class: 'vct4_btn vct4_btn_small', onclick: () => {
+      const name = prompt('Add immunity to status:');
+      if (name && name.trim() && !st.statusImmunities.includes(name.trim())) {
+        st.statusImmunities.push(name.trim());
+        commitState(st).then(() => { render(); updateInjection(); });
+      }
+    }}, '+ Add'),
+  );
+  immuneSec.appendChild(immuneWrap);
+  wrap.appendChild(immuneSec);
 
   wrap.appendChild(
     h('div', { class: 'vct4_hint' },
@@ -671,38 +1006,753 @@ function renderModifiers(st) {
   return wrap;
 }
 
-function renderInventory(st) {
-  return h('div', { class: 'vct4_tab_content' },
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Inventory'),
-      renderList(st.inventory, (it) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, `${it.name}`, pill(`x${it.qty ?? 1}`)),
-          it.notes ? h('div', { class: 'vct4_card_text vct4_dim' }, it.notes) : null,
-        ),
-        'Empty inventory.'
+// Modifier Modal for Add/Edit
+function openModifierModal(st, existingMod, category) {
+  const isEdit = !!existingMod;
+  const mod = existingMod ? { ...existingMod } : {
+    name: '',
+    effect: '',
+    value: '',
+    source: '',
+    type: 'buff',
+    duration: '',
+    remainingTime: '',
+    condition: '',
+  };
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+  const categoryLabels = { permanent: 'Permanent', temporary: 'Temporary', conditional: 'Conditional' };
+
+  const bodyContent = [
+    h('div', { class: 'vct4_form_group' },
+      h('label', { class: 'vct4_form_label' }, 'Name'),
+      h('input', { class: 'vct4_input', type: 'text', value: mod.name, oninput: (e) => mod.name = e.target.value }),
+    ),
+    h('div', { class: 'vct4_form_group' },
+      h('label', { class: 'vct4_form_label' }, 'Effect'),
+      h('textarea', { class: 'vct4_textarea', oninput: (e) => mod.effect = e.target.value }, mod.effect),
+    ),
+    h('div', { class: 'vct4_form_row' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Value'),
+        h('input', { class: 'vct4_input', type: 'text', value: mod.value || '', placeholder: 'e.g., +10%, -5', oninput: (e) => mod.value = e.target.value }),
       ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Type'),
+        createBuffDebuffSelect(mod.type, (val) => mod.type = val),
+      ),
+    ),
+    h('div', { class: 'vct4_form_group' },
+      h('label', { class: 'vct4_form_label' }, 'Source'),
+      h('input', { class: 'vct4_input', type: 'text', value: mod.source || '', oninput: (e) => mod.source = e.target.value }),
+    ),
+  ];
+
+  // Add duration fields for temporary
+  if (category === 'temporary') {
+    bodyContent.push(
+      h('div', { class: 'vct4_form_row' },
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Duration'),
+          h('input', { class: 'vct4_input', type: 'text', value: mod.duration || '', placeholder: 'e.g., 5 rounds, 1 hour', oninput: (e) => mod.duration = e.target.value }),
+        ),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Remaining'),
+          h('input', { class: 'vct4_input', type: 'text', value: mod.remainingTime || '', placeholder: 'e.g., 3 rounds', oninput: (e) => mod.remainingTime = e.target.value }),
+        ),
+      )
+    );
+  }
+
+  // Add condition field for conditional
+  if (category === 'conditional') {
+    bodyContent.push(
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Trigger Condition'),
+        h('textarea', { class: 'vct4_textarea', placeholder: 'e.g., When HP drops below 50%', oninput: (e) => mod.condition = e.target.value }, mod.condition || ''),
+      )
+    );
+  }
+
+  bodyContent.push(
+    h('div', { class: 'vct4_item_modal_actions' },
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+      h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+        if (!mod.name.trim()) { alert('Name is required.'); return; }
+        if (isEdit) {
+          const idx = st.modifiers[category].indexOf(existingMod);
+          if (idx !== -1) st.modifiers[category][idx] = mod;
+        } else {
+          st.modifiers[category].push(mod);
+        }
+        await commitState(st);
+        modal.remove();
+        render();
+        updateInjection();
+      }}, isEdit ? 'Save' : 'Add'),
     )
   );
+
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, `${isEdit ? 'Edit' : 'Add'} ${categoryLabels[category]} Modifier`),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' }, ...bodyContent),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function createBuffDebuffSelect(currentValue, onChange) {
+  const types = [{ value: 'buff', label: 'Buff' }, { value: 'debuff', label: 'Debuff' }];
+  const select = h('select', { class: 'vct4_select', onchange: (e) => onChange(e.target.value) });
+  for (const t of types) {
+    const opt = h('option', { value: t.value }, t.label);
+    if (t.value === currentValue) opt.selected = true;
+    select.appendChild(opt);
+  }
+  return select;
+}
+
+function openResistanceModal(st, resistType) {
+  const currentVal = st.resistances[resistType] || 0;
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+  let newVal = currentVal;
+
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, `Edit ${resistType} Resistance`),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Resistance Value (%)'),
+        h('input', { class: 'vct4_input', type: 'number', value: currentVal, oninput: (e) => newVal = Number(e.target.value) || 0 }),
+      ),
+      h('div', { class: 'vct4_hint' }, 'Positive = resistance, Negative = vulnerability'),
+      h('div', { class: 'vct4_item_modal_actions' },
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+          st.resistances[resistType] = newVal;
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, 'Save'),
+      ),
+    ),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function renderInventory(st) {
+  const wrap = h('div', { class: 'vct4_tab_content' });
+  const settings = st.inventorySettings;
+
+  // Categories for filter
+  const categories = ['All', 'Weapons', 'Armor', 'Consumables', 'Materials', 'Quest Items', 'Misc'];
+
+  // Toolbar
+  const searchInput = h('input', {
+    class: 'vct4_input vct4_search',
+    type: 'text',
+    placeholder: 'Search...',
+    value: settings.searchQuery || '',
+    oninput: async (e) => {
+      settings.searchQuery = e.target.value;
+      await commitState(st);
+      render();
+    }
+  });
+
+  const categorySelect = h('select', {
+    class: 'vct4_select',
+    onchange: async (e) => {
+      settings.categoryFilter = e.target.value;
+      await commitState(st);
+      render();
+    }
+  });
+  for (const cat of categories) {
+    const opt = h('option', { value: cat }, cat);
+    if (cat === settings.categoryFilter) opt.selected = true;
+    categorySelect.appendChild(opt);
+  }
+
+  const viewToggle = h('div', { class: 'vct4_view_toggle' },
+    h('button', {
+      class: `vct4_view_btn ${settings.viewMode === 'grid' ? 'active' : ''}`,
+      onclick: async () => { settings.viewMode = 'grid'; await commitState(st); render(); }
+    }, '▦'),
+    h('button', {
+      class: `vct4_view_btn ${settings.viewMode === 'list' ? 'active' : ''}`,
+      onclick: async () => { settings.viewMode = 'list'; await commitState(st); render(); }
+    }, '☰'),
+  );
+
+  const toolbar = h('div', { class: 'vct4_toolbar' },
+    h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => openInventoryModal(st, null) }, '+ Add Item'),
+    searchInput,
+    categorySelect,
+    viewToggle,
+  );
+  wrap.appendChild(toolbar);
+
+  // Currencies Section
+  const currSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Currencies'),
+  );
+  const currWrap = h('div', { class: 'vct4_currencies' });
+  const currIcons = { Gold: '🪙', Silver: '🥈', Copper: '🥉' };
+  for (const [name, amount] of Object.entries(st.resources.currencies)) {
+    const curr = h('div', { class: 'vct4_currency', onclick: () => openCurrencyModal(st, name, false) },
+      h('span', { class: 'vct4_currency_icon' }, currIcons[name] || '💎'),
+      h('span', { class: 'vct4_currency_value' }, amount),
+      h('span', { class: 'vct4_currency_name' }, name),
+    );
+    currWrap.appendChild(curr);
+  }
+  // Custom currencies
+  for (const cc of (st.resources.customCurrencies || [])) {
+    const curr = h('div', { class: 'vct4_currency', onclick: () => openCurrencyModal(st, cc.name, true) },
+      h('span', { class: 'vct4_currency_icon' }, '💎'),
+      h('span', { class: 'vct4_currency_value' }, cc.amount || 0),
+      h('span', { class: 'vct4_currency_name' }, cc.name),
+    );
+    currWrap.appendChild(curr);
+  }
+  currWrap.appendChild(
+    h('button', { class: 'vct4_btn vct4_btn_small', onclick: () => {
+      const name = prompt('New currency name:');
+      if (name && name.trim()) {
+        if (!st.resources.customCurrencies) st.resources.customCurrencies = [];
+        st.resources.customCurrencies.push({ name: name.trim(), amount: 0 });
+        commitState(st).then(() => { render(); updateInjection(); });
+      }
+    }}, '+ Add'),
+  );
+  currSec.appendChild(currWrap);
+  wrap.appendChild(currSec);
+
+  // Weight Capacity
+  const weightSec = h('div', { class: 'vct4_section' });
+  const totalWeight = st.inventory.reduce((sum, it) => sum + ((it.weight || 0) * (it.qty || 1)), 0);
+  settings.weightCapacity.current = totalWeight;
+  const weightPct = settings.weightCapacity.max > 0 ? (totalWeight / settings.weightCapacity.max) * 100 : 0;
+  const weightClass = weightPct > 90 ? 'danger' : weightPct > 70 ? 'warning' : '';
+
+  weightSec.appendChild(h('div', { class: 'vct4_h2', style: 'cursor: pointer;', onclick: () => {
+    const newMax = prompt('Set max weight capacity:', settings.weightCapacity.max);
+    if (newMax !== null) {
+      settings.weightCapacity.max = Number(newMax) || 100;
+      commitState(st).then(() => render());
+    }
+  }}, 'Weight Capacity'));
+  weightSec.appendChild(h('div', { class: 'vct4_weight_bar' },
+    h('div', { class: `vct4_weight_fill ${weightClass}`, style: `width: ${Math.min(100, weightPct)}%` }),
+  ));
+  weightSec.appendChild(h('div', { class: 'vct4_weight_text' },
+    `${totalWeight.toFixed(1)} / ${settings.weightCapacity.max} lbs`
+  ));
+  wrap.appendChild(weightSec);
+
+  // Filter inventory
+  let filteredInv = st.inventory;
+  if (settings.categoryFilter && settings.categoryFilter !== 'All') {
+    filteredInv = filteredInv.filter(it => it.category === settings.categoryFilter);
+  }
+  if (settings.searchQuery) {
+    const q = settings.searchQuery.toLowerCase();
+    filteredInv = filteredInv.filter(it =>
+      it.name.toLowerCase().includes(q) ||
+      (it.description || '').toLowerCase().includes(q)
+    );
+  }
+
+  // Inventory Items Section
+  const invSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, `Items (${filteredInv.length})`),
+  );
+
+  if (filteredInv.length === 0) {
+    invSec.appendChild(h('div', { class: 'vct4_empty' }, 'No items found.'));
+  } else if (settings.viewMode === 'grid') {
+    const grid = h('div', { class: 'vct4_inv_grid' });
+    for (const it of filteredInv) {
+      const rarityClass = `vct4_rarity_${(it.rarity || 'common').toLowerCase()}`;
+      const item = h('div', { class: `vct4_inv_item ${rarityClass}`, onclick: () => openInventoryModal(st, it) },
+        h('div', { class: 'vct4_inv_item_name' }, it.name),
+        h('div', { class: 'vct4_inv_item_qty' }, `x${it.qty || 1}`),
+        h('div', { class: 'vct4_inv_item_cat' }, it.category || 'Misc'),
+      );
+      grid.appendChild(item);
+    }
+    invSec.appendChild(grid);
+  } else {
+    const list = h('div', { class: 'vct4_inv_list' });
+    for (const it of filteredInv) {
+      const rarityClass = `vct4_rarity_${(it.rarity || 'common').toLowerCase()}`;
+      const item = h('div', { class: `vct4_inv_list_item ${rarityClass}`, onclick: () => openInventoryModal(st, it) },
+        h('div', { class: 'vct4_inv_list_name' }, it.name),
+        h('div', { class: 'vct4_inv_list_qty' }, `x${it.qty || 1}`),
+        h('div', { class: 'vct4_inv_list_cat' }, it.category || 'Misc'),
+        h('div', { class: 'vct4_inv_list_weight' }, `${((it.weight || 0) * (it.qty || 1)).toFixed(1)} lbs`),
+      );
+      list.appendChild(item);
+    }
+    invSec.appendChild(list);
+  }
+  wrap.appendChild(invSec);
+
+  return wrap;
+}
+
+// Inventory Item Modal
+function openInventoryModal(st, existingItem) {
+  const isEdit = !!existingItem;
+  const item = existingItem ? { ...existingItem } : {
+    name: '',
+    qty: 1,
+    weight: 0,
+    value: 0,
+    category: 'Misc',
+    description: '',
+    rarity: 'Common',
+    isEquippable: false,
+    equipSlot: null,
+  };
+
+  const categories = ['Weapons', 'Armor', 'Consumables', 'Materials', 'Quest Items', 'Misc'];
+  const equipSlots = ['head', 'chest', 'hands', 'legs', 'feet', 'back', 'mainhand', 'offhand', 'ring1', 'ring2', 'amulet', 'accessory1', 'accessory2', 'accessory3'];
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+
+  const categorySelect = h('select', { class: 'vct4_select', onchange: (e) => item.category = e.target.value });
+  for (const c of categories) {
+    const opt = h('option', { value: c }, c);
+    if (c === item.category) opt.selected = true;
+    categorySelect.appendChild(opt);
+  }
+
+  const equipSlotSelect = h('select', { class: 'vct4_select', onchange: (e) => item.equipSlot = e.target.value || null });
+  equipSlotSelect.appendChild(h('option', { value: '' }, '-- Select Slot --'));
+  for (const s of equipSlots) {
+    const opt = h('option', { value: s }, s.toUpperCase());
+    if (s === item.equipSlot) opt.selected = true;
+    equipSlotSelect.appendChild(opt);
+  }
+
+  const equipCheckbox = h('input', {
+    type: 'checkbox',
+    checked: item.isEquippable,
+    onchange: (e) => { item.isEquippable = e.target.checked; }
+  });
+
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, isEdit ? 'Edit Item' : 'Add Item'),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Name'),
+        h('input', { class: 'vct4_input', type: 'text', value: item.name, oninput: (e) => item.name = e.target.value }),
+      ),
+      h('div', { class: 'vct4_form_row' },
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Quantity'),
+          h('input', { class: 'vct4_input', type: 'number', value: item.qty, min: 1, oninput: (e) => item.qty = Number(e.target.value) || 1 }),
+        ),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Weight (each)'),
+          h('input', { class: 'vct4_input', type: 'number', value: item.weight, min: 0, step: 0.1, oninput: (e) => item.weight = Number(e.target.value) || 0 }),
+        ),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Value'),
+          h('input', { class: 'vct4_input', type: 'number', value: item.value, min: 0, oninput: (e) => item.value = Number(e.target.value) || 0 }),
+        ),
+      ),
+      h('div', { class: 'vct4_form_row' },
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Category'),
+          categorySelect,
+        ),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Rarity'),
+          createRaritySelect(item.rarity, (val) => item.rarity = val),
+        ),
+      ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Description'),
+        h('textarea', { class: 'vct4_textarea', oninput: (e) => item.description = e.target.value }, item.description || ''),
+      ),
+      h('div', { class: 'vct4_form_row' },
+        h('label', { class: 'vct4_checkbox_label' }, equipCheckbox, 'Equippable'),
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Equip Slot'),
+          equipSlotSelect,
+        ),
+      ),
+      h('div', { class: 'vct4_item_modal_actions' },
+        isEdit ? h('button', { class: 'vct4_btn vct4_btn_warn', onclick: async () => {
+          if (confirm(`Delete "${item.name}"?`)) {
+            st.inventory = st.inventory.filter(x => x !== existingItem);
+            await commitState(st);
+            modal.remove();
+            render();
+            updateInjection();
+          }
+        }}, 'Delete') : null,
+        isEdit && item.isEquippable && item.equipSlot ? h('button', { class: 'vct4_btn', onclick: async () => {
+          // Equip to slot
+          const slot = item.equipSlot;
+          if (st.equipment[slot]) {
+            // Unequip existing
+            const existing = st.equipment[slot];
+            st.inventory.push({
+              name: existing.name,
+              qty: 1,
+              weight: existing.weight || 0,
+              value: existing.value || 0,
+              category: 'Equipment',
+              description: existing.notes || '',
+              rarity: existing.rarity || 'Common',
+              isEquippable: true,
+              equipSlot: slot,
+            });
+          }
+          st.equipment[slot] = {
+            name: item.name,
+            notes: item.description || '',
+            mods: '',
+            rarity: item.rarity,
+            weight: item.weight,
+            value: item.value,
+          };
+          st.inventory = st.inventory.filter(x => x !== existingItem);
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, 'Equip') : null,
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+          if (!item.name.trim()) { alert('Name is required.'); return; }
+          if (isEdit) {
+            const idx = st.inventory.indexOf(existingItem);
+            if (idx !== -1) st.inventory[idx] = item;
+          } else {
+            st.inventory.push(item);
+          }
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, isEdit ? 'Save' : 'Add'),
+      ),
+    ),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function openCurrencyModal(st, currencyName, isCustom) {
+  const currentVal = isCustom
+    ? (st.resources.customCurrencies.find(c => c.name === currencyName)?.amount || 0)
+    : (st.resources.currencies[currencyName] || 0);
+  let newVal = currentVal;
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, `Edit ${currencyName}`),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Amount'),
+        h('input', { class: 'vct4_input', type: 'number', value: currentVal, oninput: (e) => newVal = Number(e.target.value) || 0 }),
+      ),
+      h('div', { class: 'vct4_item_modal_actions' },
+        isCustom ? h('button', { class: 'vct4_btn vct4_btn_warn', onclick: async () => {
+          st.resources.customCurrencies = st.resources.customCurrencies.filter(c => c.name !== currencyName);
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, 'Delete') : null,
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+          if (isCustom) {
+            const cc = st.resources.customCurrencies.find(c => c.name === currencyName);
+            if (cc) cc.amount = newVal;
+          } else {
+            st.resources.currencies[currencyName] = newVal;
+          }
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, 'Save'),
+      ),
+    ),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 function renderEquipment(st) {
-  const slots = Object.keys(st.equipment);
-  return h('div', { class: 'vct4_tab_content' },
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Equipment'),
-      h('div', { class: 'vct4_grid' },
-        ...slots.map((slot) => {
-          const item = st.equipment[slot];
-          return h('div', { class: 'vct4_slot' },
-            h('div', { class: 'vct4_slot_name' }, slot.toUpperCase()),
-            h('div', { class: 'vct4_slot_item' }, item?.name || '—'),
-            item?.notes ? h('div', { class: 'vct4_slot_notes' }, item.notes) : null,
-          );
-        })
-      )
-    )
+  const wrap = h('div', { class: 'vct4_tab_content' });
+
+  // Equipment slot definitions with display names
+  const slotSections = [
+    { title: 'Armor', slots: [
+      { key: 'head', label: 'Head', icon: '🎩' },
+      { key: 'chest', label: 'Chest', icon: '👕' },
+      { key: 'hands', label: 'Hands', icon: '🧤' },
+      { key: 'legs', label: 'Legs', icon: '👖' },
+      { key: 'feet', label: 'Feet', icon: '👢' },
+      { key: 'back', label: 'Back', icon: '🧥' },
+    ]},
+    { title: 'Weapons', slots: [
+      { key: 'mainhand', label: 'Main Hand', icon: '⚔️' },
+      { key: 'offhand', label: 'Off Hand', icon: '🛡️' },
+    ]},
+    { title: 'Accessories', slots: [
+      { key: 'ring1', label: 'Ring 1', icon: '💍' },
+      { key: 'ring2', label: 'Ring 2', icon: '💍' },
+      { key: 'amulet', label: 'Amulet', icon: '📿' },
+      { key: 'accessory1', label: 'Accessory 1', icon: '✨' },
+      { key: 'accessory2', label: 'Accessory 2', icon: '✨' },
+      { key: 'accessory3', label: 'Accessory 3', icon: '✨' },
+    ]},
+  ];
+
+  // Calculate total equipment stats
+  let totalArmor = 0;
+  let totalDamage = 0;
+  let equippedCount = 0;
+  for (const item of Object.values(st.equipment)) {
+    if (item) {
+      equippedCount++;
+      // Parse mods for stats (simplified)
+      const mods = item.mods || item.notes || '';
+      const armorMatch = mods.match(/\+?(\d+)\s*(?:armor|def|defence)/i);
+      const damageMatch = mods.match(/\+?(\d+)\s*(?:damage|dmg|attack)/i);
+      if (armorMatch) totalArmor += Number(armorMatch[1]);
+      if (damageMatch) totalDamage += Number(damageMatch[1]);
+    }
+  }
+
+  // Stats Summary
+  const statsSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Equipment Stats'),
+    h('div', { class: 'vct4_stats_summary' },
+      h('div', { class: 'vct4_stat_item' },
+        h('div', { class: 'vct4_stat_value' }, equippedCount),
+        h('div', { class: 'vct4_stat_label' }, 'Equipped'),
+      ),
+      h('div', { class: 'vct4_stat_item' },
+        h('div', { class: 'vct4_stat_value' }, totalArmor || '—'),
+        h('div', { class: 'vct4_stat_label' }, 'Armor'),
+      ),
+      h('div', { class: 'vct4_stat_item' },
+        h('div', { class: 'vct4_stat_value' }, totalDamage || '—'),
+        h('div', { class: 'vct4_stat_label' }, 'Damage'),
+      ),
+    ),
   );
+  wrap.appendChild(statsSec);
+
+  // Equipment Grid
+  const equipSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Equipment Slots'),
+  );
+
+  for (const section of slotSections) {
+    const grid = h('div', { class: 'vct4_equip_grid' });
+    grid.appendChild(h('div', { class: 'vct4_equip_section_title' }, section.title));
+
+    for (const slot of section.slots) {
+      const item = st.equipment[slot.key];
+      const isEmpty = !item;
+      const rarityClass = item?.rarity ? `vct4_rarity_${item.rarity.toLowerCase()}` : '';
+
+      const slotEl = h('div', {
+        class: `vct4_equip_slot ${isEmpty ? 'empty' : ''} ${rarityClass}`,
+        onclick: () => openEquipmentSlotModal(st, slot.key, slot.label)
+      },
+        h('div', { class: 'vct4_equip_slot_label' }, `${slot.icon} ${slot.label}`),
+        h('div', { class: 'vct4_equip_slot_item' }, item?.name || 'Empty'),
+        item?.notes ? h('div', { class: 'vct4_equip_slot_stat' }, item.notes) : null,
+      );
+      grid.appendChild(slotEl);
+    }
+
+    equipSec.appendChild(grid);
+  }
+
+  wrap.appendChild(equipSec);
+
+  // Equip from Inventory button
+  const equipFromInv = st.inventory.filter(it => it.isEquippable);
+  if (equipFromInv.length > 0) {
+    wrap.appendChild(h('div', { class: 'vct4_hint' },
+      `${equipFromInv.length} equippable item(s) in inventory. Click an item in Inventory tab to equip.`
+    ));
+  }
+
+  return wrap;
+}
+
+// Equipment Slot Modal
+function openEquipmentSlotModal(st, slotKey, slotLabel) {
+  const item = st.equipment[slotKey];
+  const isEquipped = !!item;
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+
+  if (!isEquipped) {
+    // Show equippable items from inventory
+    const equippable = st.inventory.filter(it => it.isEquippable && it.equipSlot === slotKey);
+
+    const card = h('div', { class: 'vct4_item_modal_card' },
+      h('div', { class: 'vct4_item_modal_header' },
+        h('div', { class: 'vct4_item_modal_title' }, `${slotLabel} - Empty`),
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+      ),
+      h('div', { class: 'vct4_item_modal_body' },
+        h('div', { class: 'vct4_hint' }, 'Equip an item from inventory or add directly:'),
+        equippable.length > 0
+          ? h('div', { class: 'vct4_list' },
+              ...equippable.map(it => h('div', { class: 'vct4_card', style: 'cursor: pointer;', onclick: async () => {
+                st.equipment[slotKey] = {
+                  name: it.name,
+                  notes: it.description || '',
+                  mods: '',
+                  rarity: it.rarity,
+                };
+                st.inventory = st.inventory.filter(x => x !== it);
+                await commitState(st);
+                modal.remove();
+                render();
+                updateInjection();
+              }},
+                h('div', { class: 'vct4_card_title' }, it.name, pill(it.rarity || 'Common')),
+              ))
+            )
+          : h('div', { class: 'vct4_empty' }, 'No equippable items for this slot in inventory.'),
+        h('hr', { class: 'vct4_hr' }),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: () => {
+          modal.remove();
+          openEquipmentEditModal(st, slotKey, slotLabel, null);
+        }}, 'Add New Item'),
+        h('div', { class: 'vct4_item_modal_actions' },
+          h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Close'),
+        ),
+      ),
+    );
+    modal.appendChild(card);
+  } else {
+    // Show equipped item details
+    const card = h('div', { class: 'vct4_item_modal_card' },
+      h('div', { class: 'vct4_item_modal_header' },
+        h('div', { class: 'vct4_item_modal_title' }, `${slotLabel} - ${item.name}`),
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+      ),
+      h('div', { class: 'vct4_item_modal_body' },
+        h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Item'),
+          h('div', { class: 'vct4_big' }, item.name),
+        ),
+        item.rarity ? h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Rarity'),
+          h('span', { class: `vct4_pill vct4_rarity_${item.rarity.toLowerCase()}` }, item.rarity),
+        ) : null,
+        item.notes ? h('div', { class: 'vct4_form_group' },
+          h('label', { class: 'vct4_form_label' }, 'Stats/Notes'),
+          h('div', {}, item.notes),
+        ) : null,
+        h('div', { class: 'vct4_item_modal_actions' },
+          h('button', { class: 'vct4_btn', onclick: () => {
+            modal.remove();
+            openEquipmentEditModal(st, slotKey, slotLabel, item);
+          }}, 'Edit'),
+          h('button', { class: 'vct4_btn vct4_btn_warn', onclick: async () => {
+            // Unequip to inventory
+            st.inventory.push({
+              name: item.name,
+              qty: 1,
+              weight: item.weight || 0,
+              value: item.value || 0,
+              category: 'Equipment',
+              description: item.notes || '',
+              rarity: item.rarity || 'Common',
+              isEquippable: true,
+              equipSlot: slotKey,
+            });
+            st.equipment[slotKey] = null;
+            await commitState(st);
+            modal.remove();
+            render();
+            updateInjection();
+          }}, 'Unequip'),
+          h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Close'),
+        ),
+      ),
+    );
+    modal.appendChild(card);
+  }
+
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function openEquipmentEditModal(st, slotKey, slotLabel, existingItem) {
+  const isEdit = !!existingItem;
+  const item = existingItem ? { ...existingItem } : { name: '', notes: '', mods: '', rarity: 'Common' };
+
+  const modal = h('div', { class: 'vct4_item_modal', 'aria-hidden': 'false' });
+  const card = h('div', { class: 'vct4_item_modal_card' },
+    h('div', { class: 'vct4_item_modal_header' },
+      h('div', { class: 'vct4_item_modal_title' }, `${isEdit ? 'Edit' : 'Add'} ${slotLabel} Item`),
+      h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, '✕'),
+    ),
+    h('div', { class: 'vct4_item_modal_body' },
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Name'),
+        h('input', { class: 'vct4_input', type: 'text', value: item.name, oninput: (e) => item.name = e.target.value }),
+      ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Rarity'),
+        createRaritySelect(item.rarity, (val) => item.rarity = val),
+      ),
+      h('div', { class: 'vct4_form_group' },
+        h('label', { class: 'vct4_form_label' }, 'Stats/Notes'),
+        h('textarea', { class: 'vct4_textarea', placeholder: 'e.g., +10 Armor, Fire Resistance +5%', oninput: (e) => item.notes = e.target.value }, item.notes || ''),
+      ),
+      h('div', { class: 'vct4_item_modal_actions' },
+        h('button', { class: 'vct4_btn', onclick: () => modal.remove() }, 'Cancel'),
+        h('button', { class: 'vct4_btn vct4_btn_success', onclick: async () => {
+          if (!item.name.trim()) { alert('Name is required.'); return; }
+          st.equipment[slotKey] = item;
+          await commitState(st);
+          modal.remove();
+          render();
+          updateInjection();
+        }}, isEdit ? 'Save' : 'Equip'),
+      ),
+    ),
+  );
+  modal.appendChild(card);
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 function renderSkills(st) {
@@ -1001,18 +2051,59 @@ function buildInjectedPrompt(st, s) {
 
   lines.push(``);
   lines.push(`== TITLES ==`);
+  if (st.activeTitle) lines.push(`ACTIVE TITLE: ${st.activeTitle}`);
   if (!st.titles.length) lines.push(`(none)`);
   else {
-    for (const t of st.titles.slice(0, Math.min(max, 25))) lines.push(`- ${t.name}: ${truncate(t.effect || t.description, 180)}`);
+    for (const t of st.titles.slice(0, Math.min(max, 25))) {
+      const active = t.name === st.activeTitle ? ' [ACTIVE]' : '';
+      lines.push(`- ${t.name}${active}: ${truncate(t.effect || t.description, 180)}`);
+    }
     if (st.titles.length > 25) lines.push(`(+${st.titles.length - 25} more titles not shown)`);
   }
 
   lines.push(``);
   lines.push(`== MODIFIERS ==`);
-  if (!st.modifiers.length) lines.push(`(none)`);
+  const allMods = [
+    ...(st.modifiers?.permanent || []).map(m => ({ ...m, _cat: 'Permanent' })),
+    ...(st.modifiers?.temporary || []).map(m => ({ ...m, _cat: 'Temporary' })),
+    ...(st.modifiers?.conditional || []).map(m => ({ ...m, _cat: 'Conditional' })),
+  ];
+  if (!allMods.length) lines.push(`(none)`);
   else {
-    for (const m of st.modifiers.slice(0, Math.min(max, 25))) lines.push(`- ${m.name}: ${truncate(m.effects || m.description, 180)}`);
-    if (st.modifiers.length > 25) lines.push(`(+${st.modifiers.length - 25} more modifiers not shown)`);
+    for (const m of allMods.slice(0, Math.min(max, 25))) {
+      const typeTag = m.type === 'debuff' ? '[DEBUFF]' : '[BUFF]';
+      const durInfo = m._cat === 'Temporary' && m.duration ? ` (${m.duration})` : '';
+      const condInfo = m._cat === 'Conditional' && m.condition ? ` (when: ${truncate(m.condition, 60)})` : '';
+      lines.push(`- ${m.name} ${typeTag}${durInfo}${condInfo}: ${truncate(m.effect || '', 140)}`);
+    }
+    if (allMods.length > 25) lines.push(`(+${allMods.length - 25} more modifiers not shown)`);
+  }
+
+  // Resistances
+  lines.push(``);
+  lines.push(`== RESISTANCES ==`);
+  const resistEntries = Object.entries(st.resistances || {}).filter(([_, v]) => v !== 0);
+  if (!resistEntries.length) lines.push(`(none)`);
+  else {
+    lines.push(resistEntries.map(([k, v]) => `${k}: ${v >= 0 ? '+' : ''}${v}%`).join(' | '));
+  }
+
+  // Status Immunities
+  if (st.statusImmunities?.length) {
+    lines.push(`Immunities: ${st.statusImmunities.join(', ')}`);
+  }
+
+  // Equipment
+  lines.push(``);
+  lines.push(`== EQUIPMENT ==`);
+  const equippedItems = Object.entries(st.equipment || {}).filter(([_, item]) => item);
+  if (!equippedItems.length) lines.push(`(nothing equipped)`);
+  else {
+    for (const [slot, item] of equippedItems) {
+      const rarityTag = item.rarity ? ` [${item.rarity}]` : '';
+      const stats = item.notes ? ` — ${truncate(item.notes, 80)}` : '';
+      lines.push(`- ${slot.toUpperCase()}: ${item.name}${rarityTag}${stats}`);
+    }
   }
 
   // Inventory / quests (top-level)
@@ -1020,7 +2111,11 @@ function buildInjectedPrompt(st, s) {
   lines.push(`== INVENTORY ==`);
   if (!st.inventory.length) lines.push(`(empty)`);
   else {
-    for (const it of st.inventory.slice(0, max)) lines.push(`- ${it.name} x${it.qty ?? 1}`);
+    for (const it of st.inventory.slice(0, max)) {
+      const catTag = it.category ? ` [${it.category}]` : '';
+      const rarityTag = it.rarity && it.rarity !== 'Common' ? ` (${it.rarity})` : '';
+      lines.push(`- ${it.name}${rarityTag}${catTag} x${it.qty ?? 1}`);
+    }
     if (st.inventory.length > max) lines.push(`(+${st.inventory.length - max} more items not shown)`);
   }
 

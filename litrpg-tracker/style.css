@@ -298,3 +298,444 @@
 
 /* Allow user to hide/show panel */
 .vct4_hidden{ display:none !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ENHANCED TABS: Titles, Modifiers, Equipment, Inventory
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Rarity colors */
+.vct4_rarity_common { color: #a0a0a0; border-color: rgba(160,160,160,.4) !important; }
+.vct4_rarity_uncommon { color: #2ecc71; border-color: rgba(46,204,113,.4) !important; }
+.vct4_rarity_rare { color: #3498db; border-color: rgba(52,152,219,.4) !important; }
+.vct4_rarity_epic { color: #9b59b6; border-color: rgba(155,89,182,.4) !important; }
+.vct4_rarity_legendary { color: #f39c12; border-color: rgba(243,156,18,.4) !important; }
+
+/* Buff/Debuff indicators */
+.vct4_buff { border-left: 3px solid #2ecc71; }
+.vct4_debuff { border-left: 3px solid #e74c3c; }
+
+/* Active title highlight */
+.vct4_title_active {
+  border-color: rgba(243,156,18,.6) !important;
+  background: rgba(243,156,18,.12) !important;
+  box-shadow: 0 0 12px rgba(243,156,18,.2);
+}
+.vct4_title_active::before {
+  content: '★ ';
+  color: #f39c12;
+}
+
+/* Tab toolbar */
+.vct4_toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  align-items: center;
+}
+.vct4_toolbar_spacer { flex: 1; }
+
+/* Search input */
+.vct4_search {
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+/* Filter select */
+.vct4_select {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.vct4_select:focus { outline: none; border-color: rgba(140,70,255,.55); }
+
+/* View toggle buttons */
+.vct4_view_toggle {
+  display: flex;
+  gap: 2px;
+  background: rgba(255,255,255,.06);
+  border-radius: 10px;
+  padding: 2px;
+}
+.vct4_view_btn {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  opacity: .7;
+}
+.vct4_view_btn.active {
+  background: rgba(140,70,255,.25);
+  opacity: 1;
+}
+
+/* Equipment visual grid */
+.vct4_equip_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.vct4_equip_section_title {
+  grid-column: 1 / -1;
+  font-weight: 800;
+  font-size: 12px;
+  opacity: .75;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-top: 8px;
+}
+.vct4_equip_section_title:first-child { margin-top: 0; }
+
+.vct4_equip_slot {
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.03);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+}
+.vct4_equip_slot:hover {
+  border-color: rgba(140,70,255,.4);
+  background: rgba(140,70,255,.08);
+}
+.vct4_equip_slot.empty {
+  border-style: dashed;
+  opacity: .7;
+}
+.vct4_equip_slot_label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  opacity: .6;
+  margin-bottom: 4px;
+}
+.vct4_equip_slot_item {
+  font-weight: 700;
+  flex: 1;
+}
+.vct4_equip_slot_stat {
+  font-size: 11px;
+  opacity: .75;
+  margin-top: 4px;
+}
+
+/* Inventory grid view */
+.vct4_inv_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+.vct4_inv_item {
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.03);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+  text-align: center;
+}
+.vct4_inv_item:hover {
+  border-color: rgba(140,70,255,.4);
+  background: rgba(140,70,255,.08);
+}
+.vct4_inv_item_name {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+.vct4_inv_item_qty {
+  font-size: 11px;
+  opacity: .75;
+}
+.vct4_inv_item_cat {
+  font-size: 10px;
+  opacity: .6;
+  margin-top: 4px;
+}
+
+/* Inventory list view */
+.vct4_inv_list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vct4_inv_list_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+}
+.vct4_inv_list_item:hover {
+  border-color: rgba(140,70,255,.4);
+  background: rgba(140,70,255,.08);
+}
+.vct4_inv_list_name { flex: 1; font-weight: 700; }
+.vct4_inv_list_qty { font-weight: 600; opacity: .75; min-width: 40px; text-align: right; }
+.vct4_inv_list_cat { font-size: 11px; opacity: .6; min-width: 80px; }
+.vct4_inv_list_weight { font-size: 11px; opacity: .6; min-width: 50px; text-align: right; }
+
+/* Currencies section */
+.vct4_currencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.vct4_currency {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vct4_currency_icon {
+  font-size: 16px;
+}
+.vct4_currency_value {
+  font-weight: 700;
+}
+.vct4_currency_name {
+  font-size: 12px;
+  opacity: .7;
+}
+
+/* Weight capacity bar */
+.vct4_weight_bar {
+  background: rgba(255,255,255,.08);
+  border-radius: 6px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.vct4_weight_fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2ecc71, #27ae60);
+  border-radius: 6px;
+  transition: width .2s ease;
+}
+.vct4_weight_fill.warning { background: linear-gradient(90deg, #f39c12, #e67e22); }
+.vct4_weight_fill.danger { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+.vct4_weight_text {
+  font-size: 11px;
+  opacity: .7;
+  text-align: right;
+}
+
+/* Modifiers sections */
+.vct4_mod_section {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.vct4_mod_section_header {
+  background: rgba(255,255,255,.04);
+  padding: 8px 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.vct4_mod_section_count {
+  background: rgba(140,70,255,.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+.vct4_mod_section_body {
+  padding: 10px;
+}
+
+/* Resistances grid */
+.vct4_resist_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+@media (max-width: 800px) {
+  .vct4_resist_grid { grid-template-columns: repeat(2, 1fr); }
+}
+.vct4_resist_item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+}
+.vct4_resist_icon { font-size: 16px; }
+.vct4_resist_name { font-size: 12px; opacity: .7; flex: 1; }
+.vct4_resist_value { font-weight: 700; }
+.vct4_resist_positive { color: #2ecc71; }
+.vct4_resist_negative { color: #e74c3c; }
+
+/* Status immunities */
+.vct4_immunities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vct4_immunity_tag {
+  background: rgba(46,204,113,.15);
+  border: 1px solid rgba(46,204,113,.3);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.vct4_immunity_remove {
+  cursor: pointer;
+  opacity: .7;
+}
+.vct4_immunity_remove:hover { opacity: 1; }
+
+/* Equipment stats summary */
+.vct4_stats_summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+}
+.vct4_stat_item {
+  text-align: center;
+}
+.vct4_stat_value {
+  font-size: 18px;
+  font-weight: 800;
+}
+.vct4_stat_label {
+  font-size: 11px;
+  opacity: .7;
+}
+
+/* Item modal / edit modal */
+.vct4_item_modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  z-index: 9999999;
+}
+.vct4_item_modal[aria-hidden="false"] { display: flex; }
+.vct4_item_modal_card {
+  width: min(480px, 92vw);
+  max-height: 85vh;
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(20,20,22,.98);
+  box-shadow: 0 20px 80px rgba(0,0,0,.55);
+}
+.vct4_item_modal_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+.vct4_item_modal_title { font-weight: 900; }
+.vct4_item_modal_body { padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
+.vct4_item_modal_actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+/* Form groups */
+.vct4_form_group { display: flex; flex-direction: column; gap: 4px; }
+.vct4_form_label { font-weight: 700; font-size: 12px; opacity: .85; }
+.vct4_form_row { display: flex; gap: 10px; }
+.vct4_form_row > * { flex: 1; }
+
+/* Textarea */
+.vct4_textarea {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  padding: 8px 10px;
+  border-radius: 10px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+.vct4_textarea:focus { outline: none; border-color: rgba(140,70,255,.55); }
+
+/* Checkbox styling */
+.vct4_checkbox_label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.vct4_checkbox_label input { transform: scale(1.1); }
+
+/* Button variants */
+.vct4_btn_success {
+  border-color: rgba(46,204,113,.4);
+  background: rgba(46,204,113,.15);
+}
+.vct4_btn_success:hover {
+  border-color: rgba(46,204,113,.6);
+  background: rgba(46,204,113,.25);
+}
+.vct4_btn_small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Tab: display active title in overview */
+.vct4_active_title_display {
+  background: linear-gradient(135deg, rgba(243,156,18,.15), rgba(230,126,34,.1));
+  border: 1px solid rgba(243,156,18,.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.vct4_active_title_label {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: .7;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.vct4_active_title_name {
+  font-weight: 800;
+  font-size: 15px;
+  color: #f39c12;
+}
+.vct4_active_title_effect {
+  font-size: 12px;
+  opacity: .85;
+  margin-top: 4px;
+}
