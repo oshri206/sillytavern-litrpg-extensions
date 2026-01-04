@@ -1,0 +1,472 @@
+/* Valdris Random Encounters */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LAUNCHER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_launcher {
+  position: fixed;
+  left: 14px;
+  bottom: 180px;
+  z-index: 999998;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(156, 39, 176, 0.6);
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.9) 0%, rgba(103, 58, 183, 0.9) 100%);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.venc_launcher:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 6px 20px rgba(156, 39, 176, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MAIN PANEL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+#venc_root {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-width: 95vw;
+  max-height: 90vh;
+  z-index: 999999;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+#venc_root.venc_hidden {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.venc_title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.venc_title_icon {
+  font-size: 24px;
+}
+
+.venc_title span:nth-child(2) {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.venc_header_actions {
+  display: flex;
+  gap: 8px;
+}
+
+.venc_btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.venc_btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#venc_btn_roll {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.6) 0%, rgba(103, 58, 183, 0.6) 100%);
+  border-color: rgba(156, 39, 176, 0.5);
+}
+
+#venc_btn_roll:hover {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.8) 0%, rgba(103, 58, 183, 0.8) 100%);
+  transform: scale(1.05);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BODY
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.venc_section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.venc_section_title {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.venc_empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  padding: 20px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TERRAIN GRID
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_terrain_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.venc_terrain_btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.venc_terrain_btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.venc_terrain_selected {
+  background: rgba(156, 39, 176, 0.3) !important;
+  border-color: rgba(156, 39, 176, 0.6) !important;
+  box-shadow: 0 0 10px rgba(156, 39, 176, 0.3);
+}
+
+.venc_terrain_icon {
+  font-size: 20px;
+}
+
+.venc_terrain_name {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.venc_terrain_danger {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CONTEXT
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.venc_context_row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.venc_context_label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.venc_context_value {
+  font-size: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ENCOUNTER RESULT
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_result {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.15) 0%, rgba(103, 58, 183, 0.15) 100%);
+  border: 1px solid rgba(156, 39, 176, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.venc_result_header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.venc_result_icon {
+  font-size: 24px;
+}
+
+.venc_result_name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  flex: 1;
+}
+
+.venc_danger {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: rgba(244, 67, 54, 0.3);
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  border-radius: 10px;
+  color: #ff6b6b;
+}
+
+.venc_result_desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.venc_result_meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.venc_result_meta span {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.venc_hostile {
+  background: rgba(244, 67, 54, 0.2) !important;
+  color: #ff6b6b !important;
+}
+
+.venc_friendly {
+  background: rgba(76, 175, 80, 0.2) !important;
+  color: #81c784 !important;
+}
+
+.venc_trade {
+  background: rgba(255, 193, 7, 0.2) !important;
+  color: #ffd54f !important;
+}
+
+.venc_magic {
+  background: rgba(156, 39, 176, 0.2) !important;
+  color: #ce93d8 !important;
+}
+
+.venc_loot {
+  background: rgba(255, 152, 0, 0.2) !important;
+  color: #ffb74d !important;
+}
+
+.venc_result_actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.venc_btn_use {
+  flex: 1;
+  background: rgba(76, 175, 80, 0.3) !important;
+  border-color: rgba(76, 175, 80, 0.5) !important;
+}
+
+.venc_btn_dismiss {
+  background: rgba(244, 67, 54, 0.2) !important;
+  border-color: rgba(244, 67, 54, 0.4) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   QUICK ROLL BUTTONS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_quick_rolls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.venc_type_btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.venc_type_btn:hover {
+  background: color-mix(in srgb, var(--type-color) 30%, transparent);
+  border-color: var(--type-color);
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HISTORY
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_history {
+  max-height: 150px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.venc_history_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.venc_history_icon {
+  font-size: 16px;
+}
+
+.venc_history_name {
+  flex: 1;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.venc_history_terrain {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.venc_toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.venc_toggle input {
+  accent-color: #9c27b0;
+}
+
+.venc_chance {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.venc_body::-webkit-scrollbar,
+.venc_history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.venc_body::-webkit-scrollbar-track,
+.venc_history::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.venc_body::-webkit-scrollbar-thumb,
+.venc_history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 650px) {
+  #venc_root {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .venc_terrain_grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

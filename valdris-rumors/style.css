@@ -1,0 +1,396 @@
+/* Valdris Rumor Mill */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LAUNCHER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vrum_launcher {
+  position: fixed;
+  left: 14px;
+  bottom: 60px;
+  z-index: 999998;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(33, 150, 243, 0.6);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.9) 0%, rgba(3, 169, 244, 0.9) 100%);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vrum_launcher:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MAIN PANEL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+#vrum_root {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 550px;
+  max-width: 95vw;
+  height: 80vh;
+  max-height: 650px;
+  z-index: 999999;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+#vrum_root.vrum_hidden {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vrum_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vrum_title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.vrum_title_icon {
+  font-size: 24px;
+}
+
+.vrum_title span:nth-child(2) {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.vrum_header_actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vrum_btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrum_btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#vrum_btn_hear {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.6) 0%, rgba(3, 169, 244, 0.6) 100%);
+  border-color: rgba(33, 150, 243, 0.5);
+}
+
+#vrum_btn_hear:hover {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.8) 0%, rgba(3, 169, 244, 0.8) 100%);
+  transform: scale(1.05);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BODY
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vrum_body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+}
+
+/* Current Rumor Display */
+.vrum_current {
+  min-height: 140px;
+}
+
+.vrum_current_empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.vrum_current_icon {
+  font-size: 32px;
+}
+
+.vrum_rumor_card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid #9E9E9E;
+}
+
+.vrum_importance_high {
+  border-left-color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.vrum_importance_med {
+  border-left-color: #FFC107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.vrum_importance_low {
+  border-left-color: #9E9E9E;
+}
+
+.vrum_rumor_header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.vrum_source_icon {
+  font-size: 24px;
+}
+
+.vrum_source_name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  flex: 1;
+}
+
+.vrum_reliability {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.vrum_rumor_text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+.vrum_rumor_footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vrum_category {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: capitalize;
+}
+
+.vrum_quest_type {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.4);
+  border-radius: 15px;
+  color: #81c784;
+  text-transform: capitalize;
+}
+
+.vrum_copy_btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrum_copy_btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Filter Bar */
+.vrum_filter_bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vrum_filter_toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.vrum_filter_toggle input {
+  accent-color: #2196F3;
+}
+
+.vrum_stats {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Rumor List */
+.vrum_list_title {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.vrum_list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vrum_list_item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vrum_list_item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vrum_heard {
+  opacity: 0.5;
+}
+
+.vrum_list_importance {
+  font-size: 10px;
+}
+
+.vrum_list_source {
+  font-size: 16px;
+}
+
+.vrum_list_text {
+  flex: 1;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vrum_list_quest {
+  font-size: 12px;
+  color: #4CAF50;
+}
+
+.vrum_empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  padding: 30px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vrum_footer {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vrum_legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vrum_body::-webkit-scrollbar,
+.vrum_list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vrum_body::-webkit-scrollbar-track,
+.vrum_list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vrum_body::-webkit-scrollbar-thumb,
+.vrum_list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+  #vrum_root {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}

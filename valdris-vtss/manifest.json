@@ -1,0 +1,13 @@
+{
+  "display_name": "Valdris VTSS - Temporal-Spatial State System",
+  "loading_order": 1,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "LO & ENI",
+  "version": "1.0.0",
+  "homePage": "",
+  "auto_update": false,
+  "description": "Core state management system for Valdris LitRPG campaigns. Tracks in-world time, location, environment, and broadcasts state changes to dependent extensions. Features a fully custom Valdris calendar with 10 months, 8-day Octaves, dual-moon phases, and intercalary Vexdays."
+}

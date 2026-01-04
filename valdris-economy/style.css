@@ -1,0 +1,460 @@
+/* Valdris Economy System */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LAUNCHER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_launcher {
+  position: fixed;
+  left: 14px;
+  bottom: 120px;
+  z-index: 999998;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 193, 7, 0.6);
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.9) 0%, rgba(255, 152, 0, 0.9) 100%);
+  color: #333;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vecon_launcher:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MAIN PANEL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+#vecon_root {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 750px;
+  max-width: 95vw;
+  height: 85vh;
+  max-height: 700px;
+  z-index: 999999;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+#vecon_root.vecon_hidden {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vecon_title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.vecon_title_icon {
+  font-size: 24px;
+}
+
+.vecon_title span:nth-child(2) {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.vecon_header_actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vecon_btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vecon_btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BODY
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Region Bar */
+.vecon_region_bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 193, 7, 0.1);
+  border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.vecon_region_label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vecon_region_select {
+  flex: 1;
+  max-width: 250px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.vecon_region_select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.vecon_inflation {
+  margin-left: auto;
+  font-size: 13px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Filter Bar */
+.vecon_filter_bar {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vecon_search {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 14px;
+}
+
+.vecon_search::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.vecon_category_tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vecon_cat_btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.vecon_cat_btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.vecon_cat_active {
+  background: rgba(255, 193, 7, 0.3) !important;
+  border-color: rgba(255, 193, 7, 0.5) !important;
+  color: #ffc107 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GOODS LIST
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_goods_list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.vecon_cat_header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+}
+
+.vecon_cat_header:first-child {
+  margin-top: 0;
+}
+
+.vecon_item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.15s ease;
+}
+
+.vecon_item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vecon_price_high {
+  background: rgba(244, 67, 54, 0.1) !important;
+  border-left: 3px solid #f44336;
+}
+
+.vecon_price_low {
+  background: rgba(76, 175, 80, 0.1) !important;
+  border-left: 3px solid #4CAF50;
+}
+
+.vecon_item_name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vecon_specialty_badge {
+  font-size: 12px;
+}
+
+.vecon_per_day {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.vecon_item_prices {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.vecon_base_price {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: line-through;
+}
+
+.vecon_arrow {
+  font-size: 11px;
+}
+
+.vecon_final_price {
+  color: #ffc107;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.vecon_price_diff {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 50px;
+  text-align: right;
+}
+
+.vecon_price_high .vecon_price_diff {
+  color: #f44336;
+}
+
+.vecon_price_low .vecon_price_diff {
+  color: #4CAF50;
+}
+
+.vecon_empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  padding: 30px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TRADE ROUTES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_trade_routes {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vecon_section_title {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.vecon_routes_grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vecon_route {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+}
+
+.vecon_route_blocked {
+  background: rgba(244, 67, 54, 0.15) !important;
+  border-color: rgba(244, 67, 54, 0.3) !important;
+}
+
+.vecon_route_icon {
+  font-size: 14px;
+}
+
+.vecon_route_name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vecon_route_status {
+  font-size: 11px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.vecon_route_blocked .vecon_route_status {
+  color: #f44336;
+}
+
+.vecon_no_routes {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_footer {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vecon_legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.vecon_legend .vecon_price_up { color: #f44336; }
+.vecon_legend .vecon_price_down { color: #4CAF50; }
+.vecon_legend .vecon_specialty { color: #ffc107; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vecon_body::-webkit-scrollbar,
+.vecon_goods_list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vecon_body::-webkit-scrollbar-track,
+.vecon_goods_list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vecon_body::-webkit-scrollbar-thumb,
+.vecon_goods_list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 650px) {
+  #vecon_root {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .vecon_region_bar {
+    flex-wrap: wrap;
+  }
+  
+  .vecon_region_select {
+    max-width: none;
+    width: 100%;
+  }
+  
+  .vecon_inflation {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "display_name": "Valdris Auto-Lorebook",
+  "loading_order": 16,
+  "requires": [],
+  "optional": ["valdris-journey"],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "LO & ENI",
+  "version": "1.0.0",
+  "description": "Fully automatic lorebook generation - just play and the lorebook grows! Detects NPCs, locations, items, factions, and more from narrative."
+}

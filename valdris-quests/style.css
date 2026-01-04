@@ -1,0 +1,484 @@
+/* Valdris Quest Board */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LAUNCHER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_launcher {
+  position: fixed;
+  left: 70px;
+  bottom: 120px;
+  z-index: 999998;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(76, 175, 80, 0.6);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(56, 142, 60, 0.9) 100%);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vquest_launcher:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MAIN PANEL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+#vquest_root {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  max-width: 95vw;
+  height: 85vh;
+  max-height: 700px;
+  z-index: 999999;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+#vquest_root.vquest_hidden {
+  display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vquest_title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.vquest_title_icon {
+  font-size: 24px;
+}
+
+.vquest_title span:nth-child(2) {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.vquest_header_actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vquest_btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vquest_btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TABS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vquest_tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vquest_tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vquest_tab_active {
+  background: rgba(76, 175, 80, 0.3) !important;
+  border-color: rgba(76, 175, 80, 0.5) !important;
+  color: #81c784 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BODY - SPLIT VIEW
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.vquest_list {
+  width: 300px;
+  min-width: 250px;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+}
+
+.vquest_detail {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   QUEST LIST ITEMS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vquest_item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.vquest_item_selected {
+  background: rgba(76, 175, 80, 0.15) !important;
+  border-color: rgba(76, 175, 80, 0.4) !important;
+}
+
+.vquest_item_header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.vquest_item_type {
+  font-size: 16px;
+}
+
+.vquest_item_title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vquest_item_diff {
+  font-size: 12px;
+}
+
+.vquest_item_meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.vquest_empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+  padding: 30px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   QUEST DETAIL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_detail_empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.vquest_detail_header {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border-left: 4px solid #4CAF50;
+  margin-bottom: 16px;
+}
+
+.vquest_detail_type {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.vquest_detail_title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.vquest_detail_meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vquest_detail_desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.vquest_detail_section {
+  margin-bottom: 16px;
+}
+
+.vquest_detail_label {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.vquest_detail_value {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Objectives */
+.vquest_objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vquest_objective {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vquest_objective:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vquest_obj_complete {
+  background: rgba(76, 175, 80, 0.15) !important;
+}
+
+.vquest_obj_complete .vquest_obj_text {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.vquest_obj_check {
+  font-size: 16px;
+}
+
+.vquest_obj_text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Rewards */
+.vquest_detail_rewards {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.vquest_reward_item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vquest_reward_icon {
+  font-size: 20px;
+}
+
+.vquest_reward_value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffc107;
+}
+
+.vquest_time_limit {
+  padding: 10px 14px;
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 8px;
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* Actions */
+.vquest_detail_actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.vquest_btn_accept {
+  flex: 1;
+  padding: 12px;
+  background: rgba(76, 175, 80, 0.3) !important;
+  border-color: rgba(76, 175, 80, 0.5) !important;
+  font-size: 14px;
+}
+
+.vquest_btn_accept:hover {
+  background: rgba(76, 175, 80, 0.5) !important;
+}
+
+.vquest_btn_complete {
+  flex: 1;
+  padding: 12px;
+  background: rgba(33, 150, 243, 0.3) !important;
+  border-color: rgba(33, 150, 243, 0.5) !important;
+  font-size: 14px;
+}
+
+.vquest_btn_complete:hover {
+  background: rgba(33, 150, 243, 0.5) !important;
+}
+
+.vquest_btn_abandon {
+  padding: 12px;
+  background: rgba(244, 67, 54, 0.2) !important;
+  border-color: rgba(244, 67, 54, 0.4) !important;
+}
+
+.vquest_btn_abandon:hover {
+  background: rgba(244, 67, 54, 0.4) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_footer {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vquest_stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vquest_list::-webkit-scrollbar,
+.vquest_detail::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vquest_list::-webkit-scrollbar-track,
+.vquest_detail::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.vquest_list::-webkit-scrollbar-thumb,
+.vquest_detail::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 700px) {
+  #vquest_root {
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .vquest_body {
+    flex-direction: column;
+  }
+  
+  .vquest_list {
+    width: 100%;
+    min-width: auto;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
