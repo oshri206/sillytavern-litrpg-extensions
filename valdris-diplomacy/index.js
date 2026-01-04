@@ -1120,6 +1120,13 @@ const UI = {
   view: 'graph', // 'graph', 'list', 'events'
 };
 
+// Cleanup references for proper resource management
+const _cleanup = {
+  vtssPollingIntervalId: null,
+  vtssCheckIntervalId: null,
+  journeyUnsubscribers: [],
+};
+
 function mountUI() {
   if (UI.mounted) return;
   UI.mounted = true;
@@ -1518,6 +1525,39 @@ function setStatus(msg) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// CLEANUP
+// ══════════════════════════════════════════════════════════════════════════════
+
+function cleanup() {
+  // Clear VTSS polling intervals
+  if (_cleanup.vtssPollingIntervalId) {
+    clearInterval(_cleanup.vtssPollingIntervalId);
+    _cleanup.vtssPollingIntervalId = null;
+  }
+  if (_cleanup.vtssCheckIntervalId) {
+    clearInterval(_cleanup.vtssCheckIntervalId);
+    _cleanup.vtssCheckIntervalId = null;
+  }
+
+  // Unsubscribe from Journey events
+  _cleanup.journeyUnsubscribers.forEach(unsub => {
+    if (typeof unsub === 'function') unsub();
+  });
+  _cleanup.journeyUnsubscribers = [];
+
+  // Remove UI elements
+  const launcher = document.getElementById('vdip_launcher');
+  if (launcher) launcher.remove();
+  if (UI.root) {
+    UI.root.remove();
+    UI.root = null;
+  }
+  UI.mounted = false;
+
+  console.log('[Diplomacy] Cleanup complete');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // GLOBAL API
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -1596,8 +1636,11 @@ window.VDiplomacy = {
   
   getActiveWars: () => getChatState().wars,
   getEvents: () => getChatState().events,
-  
+
   render,
+
+  // Cleanup (for extension unload)
+  cleanup,
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1610,30 +1653,30 @@ function subscribeToJourney() {
     setTimeout(subscribeToJourney, 1000);
     return;
   }
-  
+
   // Subscribe to faction encounters - highlight that faction, maybe generate events!
-  window.VJourney.subscribe(window.VJourney.EVENTS.FACTION_ENCOUNTERED, async (data) => {
+  const unsubFaction = window.VJourney.subscribe(window.VJourney.EVENTS.FACTION_ENCOUNTERED, async (data) => {
     console.log('[Diplomacy] Faction encountered via Journey:', data.faction);
     const st = getChatState();
-    
+
     // Track which factions player has personally encountered
     if (!st.playerEncounteredFactions) st.playerEncounteredFactions = [];
     if (data.faction && !st.playerEncounteredFactions.includes(data.faction)) {
       st.playerEncounteredFactions.push(data.faction);
     }
-    
+
     // Set as "focused" faction for UI highlighting
     st.focusedFaction = data.faction;
-    
+
     await commitState(st);
     if (UI.panelOpen) render();
   });
-  
+
   // Subscribe to combat - wars might break out or intensify!
-  window.VJourney.subscribe(window.VJourney.EVENTS.COMBAT_STARTED, async (data) => {
+  const unsubCombat = window.VJourney.subscribe(window.VJourney.EVENTS.COMBAT_STARTED, async (data) => {
     console.log('[Diplomacy] Combat detected via Journey');
     const st = getChatState();
-    
+
     // If player is in combat in a faction's territory, increase tension
     if (st.focusedFaction) {
       const faction = st.factions.find(f => f.id === st.focusedFaction);
@@ -1641,12 +1684,12 @@ function subscribeToJourney() {
         st.worldTension = Math.min(100, (st.worldTension || 0) + 2);
       }
     }
-    
+
     await commitState(st);
   });
-  
+
   // Subscribe to location changes - entering faction territory
-  window.VJourney.subscribe(window.VJourney.EVENTS.LOCATION_CHANGED, async (data) => {
+  const unsubLocation = window.VJourney.subscribe(window.VJourney.EVENTS.LOCATION_CHANGED, async (data) => {
     // Political locations might reveal diplomatic info
     if (data.tags?.includes('political') || data.tags?.includes('noble')) {
       const st = getChatState();
@@ -1654,7 +1697,12 @@ function subscribeToJourney() {
       await commitState(st);
     }
   });
-  
+
+  // Store unsubscribe functions for cleanup
+  if (unsubFaction) _cleanup.journeyUnsubscribers.push(unsubFaction);
+  if (unsubCombat) _cleanup.journeyUnsubscribers.push(unsubCombat);
+  if (unsubLocation) _cleanup.journeyUnsubscribers.push(unsubLocation);
+
   // Sync with current journey state
   const ctx = window.VJourney.getContext();
   if (ctx.faction) {
@@ -1666,7 +1714,7 @@ function subscribeToJourney() {
     }
     commitState(st);
   }
-  
+
   console.log('[Diplomacy] Subscribed to Journey Tracker!');
 }
 
@@ -1744,40 +1792,56 @@ function registerEvents() {
 
 // Subscribe to VTSS time changes if available
 function setupVTSSSubscription() {
+  // Clear any existing intervals
+  if (_cleanup.vtssCheckIntervalId) {
+    clearInterval(_cleanup.vtssCheckIntervalId);
+    _cleanup.vtssCheckIntervalId = null;
+  }
+  if (_cleanup.vtssPollingIntervalId) {
+    clearInterval(_cleanup.vtssPollingIntervalId);
+    _cleanup.vtssPollingIntervalId = null;
+  }
+
   // Check periodically if VTSS is available and subscribe
-  const checkVTSS = setInterval(() => {
+  _cleanup.vtssCheckIntervalId = setInterval(() => {
     if (window.VTSS) {
-      clearInterval(checkVTSS);
+      clearInterval(_cleanup.vtssCheckIntervalId);
+      _cleanup.vtssCheckIntervalId = null;
       console.log('[Diplomacy] VTSS detected, subscribing to time changes');
-      
+
       // Poll VTSS for changes (since it might not have a subscription system)
-      setInterval(async () => {
+      _cleanup.vtssPollingIntervalId = setInterval(async () => {
         if (!window.VTSS) return;
-        
+
         const vtss = window.VTSS.getState();
         if (!vtss?.time) return;
-        
+
         const currentTimeKey = `${vtss.time.year}-${vtss.time.month}-${vtss.time.day}-${vtss.time.hour}`;
-        
+
         if (lastVTSSTime && lastVTSSTime !== currentTimeKey) {
           // Time changed! Tick the world
           const st = getChatState();
           const tickResult = tickWorld(st);
-          
+
           if (tickResult.events && tickResult.events.length > 0) {
             await commitState(st);
             if (UI.panelOpen) render();
             console.log(`[Diplomacy] VTSS time change tick: ${tickResult.events.length} events`);
           }
         }
-        
+
         lastVTSSTime = currentTimeKey;
       }, 2000); // Check every 2 seconds
     }
   }, 1000);
-  
+
   // Stop checking after 30 seconds
-  setTimeout(() => clearInterval(checkVTSS), 30000);
+  setTimeout(() => {
+    if (_cleanup.vtssCheckIntervalId) {
+      clearInterval(_cleanup.vtssCheckIntervalId);
+      _cleanup.vtssCheckIntervalId = null;
+    }
+  }, 30000);
 }
 
 (async function main() {
