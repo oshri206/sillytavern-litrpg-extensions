@@ -298,3 +298,269 @@
 
 /* Allow user to hide/show panel */
 .vct4_hidden{ display:none !important; }
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   New Components: Filters, Proficiencies, Spell Slots, Modals
+   ────────────────────────────────────────────────────────────────────────────── */
+
+/* Controls bar */
+.vct4_controls{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+/* Filter groups */
+.vct4_filter_group{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.vct4_filter_label{
+  font-weight: 700;
+  opacity: .75;
+  font-size: 12px;
+}
+.vct4_filter_btn{
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .12s ease;
+}
+.vct4_filter_btn:hover{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+}
+.vct4_filter_btn.active{
+  background: rgba(140,70,255,.18);
+  border-color: rgba(140,70,255,.45);
+}
+
+/* Select dropdown */
+.vct4_select{
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.vct4_select:focus{
+  outline: none;
+  border-color: rgba(140,70,255,.55);
+}
+
+/* Add button variant */
+.vct4_btn_add{
+  margin-left: auto;
+  background: rgba(140,70,255,.12);
+  border-color: rgba(140,70,255,.35);
+}
+.vct4_btn_add:hover{
+  background: rgba(140,70,255,.22);
+  border-color: rgba(140,70,255,.5);
+}
+
+/* Primary button */
+.vct4_btn_primary{
+  background: rgba(140,70,255,.22);
+  border-color: rgba(140,70,255,.45);
+}
+.vct4_btn_primary:hover{
+  background: rgba(140,70,255,.32);
+  border-color: rgba(140,70,255,.6);
+}
+
+/* Small button */
+.vct4_btn_small{
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* Clickable card */
+.vct4_card_clickable{
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+}
+.vct4_card_clickable:hover{
+  border-color: rgba(140,70,255,.35);
+  background: rgba(140,70,255,.06);
+}
+
+/* Card header with edit button */
+.vct4_card_header{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+/* Skill metadata row */
+.vct4_skill_meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: .72;
+}
+.vct4_skill_meta span{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Spell info row */
+.vct4_spell_info{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-size: 12px;
+  opacity: .72;
+}
+
+/* Proficiencies */
+.vct4_prof_category{
+  margin-bottom: 12px;
+}
+.vct4_prof_label{
+  font-weight: 700;
+  opacity: .85;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.vct4_prof_grid{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.vct4_prof_item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  opacity: .9;
+  cursor: pointer;
+}
+.vct4_prof_item input{
+  transform: scale(1.1);
+  cursor: pointer;
+}
+.vct4_prof_item:hover{
+  opacity: 1;
+}
+
+/* Spell Slots grid */
+.vct4_slots_grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.vct4_slot_box{
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  border-radius: 10px;
+  padding: 8px;
+  text-align: center;
+}
+.vct4_slot_level{
+  font-weight: 700;
+  font-size: 11px;
+  opacity: .75;
+  margin-bottom: 4px;
+}
+.vct4_slot_tracker{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.vct4_slot_input{
+  width: 32px;
+  padding: 3px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.3);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.vct4_slot_input:focus{
+  outline: none;
+  border-color: rgba(140,70,255,.55);
+}
+.vct4_slot_sep{
+  opacity: .5;
+  font-weight: 700;
+}
+
+/* Modal form styles */
+.vct4_modal_form{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vct4_form_fields{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vct4_field_row{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.vct4_field_half{
+  flex: 1;
+  min-width: 140px;
+}
+.vct4_field_third{
+  flex: 1;
+  min-width: 100px;
+}
+.vct4_field textarea{
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  padding: 8px 10px;
+  border-radius: 10px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+.vct4_field textarea:focus{
+  outline: none;
+  border-color: rgba(140,70,255,.55);
+}
+.vct4_field select{
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.vct4_field select:focus{
+  outline: none;
+  border-color: rgba(140,70,255,.55);
+}

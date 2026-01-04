@@ -97,7 +97,9 @@ function newEmptyState() {
       currencies: { Gold: 0, Silver: 0, Copper: 0 },
       regenPerMinute: { HP: null, MP: null, SP: null },
     },
-    traits: [],        // {name,type,description,effect}
+    // Enhanced traits with categories: {name, category, description, source, effect}
+    // Categories: Innate, Acquired, Racial, Background
+    traits: [],
     titles: [],        // {name,description,effect,rarity}
     modifiers: [],     // {name,description,expires,effects}
     inventory: [],     // {name,qty,notes}
@@ -106,8 +108,32 @@ function newEmptyState() {
       wrists: null, hands: null, waist: null, legs: null, feet: null,
       mainhand: null, offhand: null, ring1: null, ring2: null, accessory: null
     },
-    skills: [],        // {name,level,description,effect}
-    spells: [],        // {name,description,defaultMana,currentMana,defaultEffect,currentEffect,school,level,cooldown,range,tags}
+    // Enhanced skills: {name, description, isPassive, category, level, cooldown, resourceType, resourceCost, damageEffect}
+    // Categories: Combat, Magic, Utility, Social, Crafting
+    skills: [],
+    // Proficiencies: toggleable checkboxes for weapon/armor/tool/language/vehicle types
+    proficiencies: {
+      weapons: { swords: false, axes: false, bows: false, daggers: false, staves: false, polearms: false, hammers: false, crossbows: false, thrown: false, unarmed: false },
+      armor: { light: false, medium: false, heavy: false, shields: false },
+      tools: { alchemist: false, blacksmith: false, herbalist: false, lockpicking: false, cartography: false, cooking: false, jeweler: false, leatherworker: false },
+      languages: { common: false, elvish: false, dwarvish: false, orcish: false, draconic: false, infernal: false, celestial: false, primordial: false, abyssal: false, sylvan: false },
+      vehicles: { landMounts: false, watercraft: false, airships: false, carts: false, warMachines: false }
+    },
+    // Enhanced spells: {name, description, school, defaultMana, currentMana, defaultDamage, currentDamage, castingTime, range, duration, concentration, level, cooldown, tags}
+    // Schools: Evocation, Conjuration, Necromancy, Abjuration, Transmutation, Divination, Enchantment, Illusion
+    spells: [],
+    // Spell slots: {level: {used, max}}
+    spellSlots: {
+      1: { used: 0, max: 0 },
+      2: { used: 0, max: 0 },
+      3: { used: 0, max: 0 },
+      4: { used: 0, max: 0 },
+      5: { used: 0, max: 0 },
+      6: { used: 0, max: 0 },
+      7: { used: 0, max: 0 },
+      8: { used: 0, max: 0 },
+      9: { used: 0, max: 0 }
+    },
     quests: [],        // {name,status,description,objectives,progress,notes}
     relationships: [], // {name,standing,notes,flags}
     factions: [],      // {name,standing,notes}
@@ -219,7 +245,25 @@ const UI = {
   mounted: false,
   root: null,
   activeTab: 'character',
+  // Skills tab state
+  skillsFilter: 'all',      // all, active, passive
+  skillsCategory: 'all',    // all, Combat, Magic, Utility, Social, Crafting
+  // Spells tab state
+  spellsSchool: 'all',      // all, Evocation, Conjuration, etc.
+  spellsSort: 'name',       // name, cost, damage
+  // Traits tab state
+  traitsCategory: 'all',    // all, Innate, Acquired, Racial, Background
+  // Modal state
+  modalType: null,          // skills, spells, traits
+  modalMode: null,          // add, edit
+  modalData: null,          // item being edited
+  modalIndex: null,         // index in array for edit mode
 };
+
+const SKILL_CATEGORIES = ['Combat', 'Magic', 'Utility', 'Social', 'Crafting'];
+const SPELL_SCHOOLS = ['Evocation', 'Conjuration', 'Necromancy', 'Abjuration', 'Transmutation', 'Divination', 'Enchantment', 'Illusion'];
+const TRAIT_CATEGORIES = ['Innate', 'Acquired', 'Racial', 'Background'];
+const RESOURCE_TYPES = ['Mana', 'Stamina', 'Health', 'Rage', 'Focus', 'Energy', 'None'];
 
 function mountUI() {
   if (UI.mounted) return;
@@ -306,6 +350,18 @@ function mountUI() {
         </div>
       </div>
     </div>
+
+    <div class="vct4_modal" id="vct4_item_modal" aria-hidden="true">
+      <div class="vct4_modal_card">
+        <div class="vct4_modal_header">
+          <div class="vct4_modal_title" id="vct4_item_modal_title">Add Item</div>
+          <button class="vct4_btn" id="vct4_item_modal_close">✕</button>
+        </div>
+        <div class="vct4_modal_body" id="vct4_item_modal_body">
+          <!-- Dynamic content inserted here -->
+        </div>
+      </div>
+    </div>
   `;
   host.appendChild(wrapper);
   UI.root = wrapper;
@@ -341,6 +397,12 @@ function mountUI() {
   wrapper.querySelector('#vct4_modal_close').addEventListener('click', () => openSettings(false));
   wrapper.querySelector('#vct4_modal').addEventListener('click', (e) => {
     if (e.target.id === 'vct4_modal') openSettings(false);
+  });
+
+  // Item modal
+  wrapper.querySelector('#vct4_item_modal_close').addEventListener('click', () => closeItemModal());
+  wrapper.querySelector('#vct4_item_modal').addEventListener('click', (e) => {
+    if (e.target.id === 'vct4_item_modal') closeItemModal();
   });
 
   wrapper.querySelector('#vct4_btn_seed').addEventListener('click', async () => {
@@ -434,6 +496,328 @@ function openSettings(open) {
   const modal = UI.root.querySelector('#vct4_modal');
   modal.setAttribute('aria-hidden', open ? 'false' : 'true');
   if (open) hydrateSettingsUI();
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Item Modal System (for Skills, Spells, Traits)
+// ──────────────────────────────────────────────────────────────────────────────
+function openItemModal(type, mode, data = null, index = null) {
+  UI.modalType = type;
+  UI.modalMode = mode;
+  UI.modalData = data ? structuredClone(data) : null;
+  UI.modalIndex = index;
+
+  const modal = UI.root.querySelector('#vct4_item_modal');
+  const title = UI.root.querySelector('#vct4_item_modal_title');
+  const body = UI.root.querySelector('#vct4_item_modal_body');
+
+  const typeName = type.charAt(0).toUpperCase() + type.slice(1, -1); // skills -> Skill
+  title.textContent = mode === 'add' ? `Add ${typeName}` : `Edit ${typeName}`;
+
+  body.innerHTML = '';
+  body.appendChild(renderModalForm(type, mode, data));
+
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeItemModal() {
+  const modal = UI.root.querySelector('#vct4_item_modal');
+  modal.setAttribute('aria-hidden', 'true');
+  UI.modalType = null;
+  UI.modalMode = null;
+  UI.modalData = null;
+  UI.modalIndex = null;
+}
+
+function renderModalForm(type, mode, data) {
+  const form = h('div', { class: 'vct4_modal_form' });
+
+  if (type === 'skills') {
+    form.appendChild(renderSkillForm(data));
+  } else if (type === 'spells') {
+    form.appendChild(renderSpellForm(data));
+  } else if (type === 'traits') {
+    form.appendChild(renderTraitForm(data));
+  }
+
+  // Action buttons
+  const actions = h('div', { class: 'vct4_actions_row' });
+
+  const saveBtn = h('button', { class: 'vct4_btn vct4_btn_primary', onclick: () => saveModalItem() }, 'Save');
+  actions.appendChild(saveBtn);
+
+  if (mode === 'edit') {
+    const deleteBtn = h('button', { class: 'vct4_btn vct4_btn_warn', onclick: () => deleteModalItem() }, 'Delete');
+    actions.appendChild(deleteBtn);
+  }
+
+  const cancelBtn = h('button', { class: 'vct4_btn', onclick: () => closeItemModal() }, 'Cancel');
+  actions.appendChild(cancelBtn);
+
+  form.appendChild(actions);
+  return form;
+}
+
+function renderSkillForm(data) {
+  const wrap = h('div', { class: 'vct4_form_fields' });
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Name'),
+    h('input', { type: 'text', id: 'modal_skill_name', value: data?.name || '', spellcheck: 'false' })
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Description'),
+    h('textarea', { id: 'modal_skill_desc', rows: 3 }, data?.description || '')
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Category'),
+      h('select', { id: 'modal_skill_category' },
+        h('option', { value: '' }, '— Select —'),
+        ...SKILL_CATEGORIES.map(c => h('option', { value: c, selected: data?.category === c }, c))
+      )
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Skill Type'),
+      h('select', { id: 'modal_skill_passive' },
+        h('option', { value: 'false', selected: !data?.isPassive }, 'Active'),
+        h('option', { value: 'true', selected: data?.isPassive }, 'Passive')
+      )
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Level/Rank'),
+      h('input', { type: 'number', id: 'modal_skill_level', value: data?.level || '', min: 1 })
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Cooldown'),
+      h('input', { type: 'text', id: 'modal_skill_cooldown', value: data?.cooldown || '', placeholder: 'e.g. 5 turns' })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Resource Type'),
+      h('select', { id: 'modal_skill_resource_type' },
+        ...RESOURCE_TYPES.map(r => h('option', { value: r, selected: data?.resourceType === r }, r))
+      )
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Resource Cost'),
+      h('input', { type: 'number', id: 'modal_skill_resource_cost', value: data?.resourceCost || '', min: 0 })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Damage/Effect Value'),
+    h('input', { type: 'text', id: 'modal_skill_damage', value: data?.damageEffect || '', placeholder: 'e.g. 2d6+5 or +20% movement' })
+  ));
+
+  return wrap;
+}
+
+function renderSpellForm(data) {
+  const wrap = h('div', { class: 'vct4_form_fields' });
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Name'),
+    h('input', { type: 'text', id: 'modal_spell_name', value: data?.name || '', spellcheck: 'false' })
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Description'),
+    h('textarea', { id: 'modal_spell_desc', rows: 3 }, data?.description || '')
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'School/Element'),
+      h('select', { id: 'modal_spell_school' },
+        h('option', { value: '' }, '— Select —'),
+        ...SPELL_SCHOOLS.map(s => h('option', { value: s, selected: data?.school === s }, s))
+      )
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Spell Level'),
+      h('input', { type: 'number', id: 'modal_spell_level', value: data?.level || '', min: 0, max: 9 })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Default Mana Cost'),
+      h('input', { type: 'number', id: 'modal_spell_default_mana', value: data?.defaultMana || '', min: 0 })
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Current Mana Cost'),
+      h('input', { type: 'number', id: 'modal_spell_current_mana', value: data?.currentMana || '', min: 0 })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Default Damage/Effect'),
+      h('input', { type: 'text', id: 'modal_spell_default_damage', value: data?.defaultEffect || '' })
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Current Damage/Effect'),
+      h('input', { type: 'text', id: 'modal_spell_current_damage', value: data?.currentEffect || '' })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_third' },
+      h('label', {}, 'Casting Time'),
+      h('input', { type: 'text', id: 'modal_spell_casting_time', value: data?.castingTime || '', placeholder: '1 action' })
+    ),
+    h('div', { class: 'vct4_field vct4_field_third' },
+      h('label', {}, 'Range'),
+      h('input', { type: 'text', id: 'modal_spell_range', value: data?.range || '', placeholder: '60 feet' })
+    ),
+    h('div', { class: 'vct4_field vct4_field_third' },
+      h('label', {}, 'Duration'),
+      h('input', { type: 'text', id: 'modal_spell_duration', value: data?.duration || '', placeholder: 'Instant' })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field vct4_row' },
+    h('label', { class: 'vct4_toggle' },
+      h('input', { type: 'checkbox', id: 'modal_spell_concentration', checked: data?.concentration }),
+      h('span', {}, 'Requires Concentration')
+    )
+  ));
+
+  return wrap;
+}
+
+function renderTraitForm(data) {
+  const wrap = h('div', { class: 'vct4_form_fields' });
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Name'),
+    h('input', { type: 'text', id: 'modal_trait_name', value: data?.name || '', spellcheck: 'false' })
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Description'),
+    h('textarea', { id: 'modal_trait_desc', rows: 3 }, data?.description || '')
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field_row' },
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Category'),
+      h('select', { id: 'modal_trait_category' },
+        h('option', { value: '' }, '— Select —'),
+        ...TRAIT_CATEGORIES.map(c => h('option', { value: c, selected: data?.category === c }, c))
+      )
+    ),
+    h('div', { class: 'vct4_field vct4_field_half' },
+      h('label', {}, 'Source'),
+      h('input', { type: 'text', id: 'modal_trait_source', value: data?.source || '', placeholder: 'e.g. Racial, Blessing' })
+    )
+  ));
+
+  wrap.appendChild(h('div', { class: 'vct4_field' },
+    h('label', {}, 'Mechanical Effect'),
+    h('input', { type: 'text', id: 'modal_trait_effect', value: data?.effect || '', placeholder: 'e.g. +2 to Perception checks' })
+  ));
+
+  return wrap;
+}
+
+async function saveModalItem() {
+  const st = getChatState();
+
+  if (UI.modalType === 'skills') {
+    const item = {
+      name: UI.root.querySelector('#modal_skill_name')?.value?.trim() || 'Unnamed Skill',
+      description: UI.root.querySelector('#modal_skill_desc')?.value?.trim() || '',
+      category: UI.root.querySelector('#modal_skill_category')?.value || '',
+      isPassive: UI.root.querySelector('#modal_skill_passive')?.value === 'true',
+      level: num(UI.root.querySelector('#modal_skill_level')?.value),
+      cooldown: UI.root.querySelector('#modal_skill_cooldown')?.value?.trim() || '',
+      resourceType: UI.root.querySelector('#modal_skill_resource_type')?.value || 'None',
+      resourceCost: num(UI.root.querySelector('#modal_skill_resource_cost')?.value),
+      damageEffect: UI.root.querySelector('#modal_skill_damage')?.value?.trim() || ''
+    };
+
+    if (UI.modalMode === 'edit' && UI.modalIndex !== null) {
+      st.skills[UI.modalIndex] = item;
+    } else {
+      st.skills.push(item);
+    }
+  } else if (UI.modalType === 'spells') {
+    const item = {
+      name: UI.root.querySelector('#modal_spell_name')?.value?.trim() || 'Unnamed Spell',
+      description: UI.root.querySelector('#modal_spell_desc')?.value?.trim() || '',
+      school: UI.root.querySelector('#modal_spell_school')?.value || '',
+      level: num(UI.root.querySelector('#modal_spell_level')?.value),
+      defaultMana: num(UI.root.querySelector('#modal_spell_default_mana')?.value),
+      currentMana: num(UI.root.querySelector('#modal_spell_current_mana')?.value),
+      defaultEffect: UI.root.querySelector('#modal_spell_default_damage')?.value?.trim() || '',
+      currentEffect: UI.root.querySelector('#modal_spell_current_damage')?.value?.trim() || '',
+      castingTime: UI.root.querySelector('#modal_spell_casting_time')?.value?.trim() || '',
+      range: UI.root.querySelector('#modal_spell_range')?.value?.trim() || '',
+      duration: UI.root.querySelector('#modal_spell_duration')?.value?.trim() || '',
+      concentration: UI.root.querySelector('#modal_spell_concentration')?.checked || false,
+      cooldown: '',
+      tags: []
+    };
+
+    if (UI.modalMode === 'edit' && UI.modalIndex !== null) {
+      st.spells[UI.modalIndex] = item;
+    } else {
+      st.spells.push(item);
+    }
+  } else if (UI.modalType === 'traits') {
+    const item = {
+      name: UI.root.querySelector('#modal_trait_name')?.value?.trim() || 'Unnamed Trait',
+      description: UI.root.querySelector('#modal_trait_desc')?.value?.trim() || '',
+      category: UI.root.querySelector('#modal_trait_category')?.value || '',
+      source: UI.root.querySelector('#modal_trait_source')?.value?.trim() || '',
+      effect: UI.root.querySelector('#modal_trait_effect')?.value?.trim() || '',
+      type: UI.root.querySelector('#modal_trait_category')?.value || '' // backwards compatibility
+    };
+
+    if (UI.modalMode === 'edit' && UI.modalIndex !== null) {
+      st.traits[UI.modalIndex] = item;
+    } else {
+      st.traits.push(item);
+    }
+  }
+
+  await commitState(st);
+  closeItemModal();
+  render();
+  updateInjection();
+  setStatus(`${UI.modalMode === 'edit' ? 'Updated' : 'Added'} item.`);
+}
+
+async function deleteModalItem() {
+  const st = getChatState();
+
+  if (UI.modalIndex === null) {
+    closeItemModal();
+    return;
+  }
+
+  if (UI.modalType === 'skills') {
+    st.skills.splice(UI.modalIndex, 1);
+  } else if (UI.modalType === 'spells') {
+    st.spells.splice(UI.modalIndex, 1);
+  } else if (UI.modalType === 'traits') {
+    st.traits.splice(UI.modalIndex, 1);
+  }
+
+  await commitState(st);
+  closeItemModal();
+  render();
+  updateInjection();
+  setStatus('Deleted item.');
 }
 
 function hydrateSettingsUI() {
@@ -577,18 +961,116 @@ function renderCharacter(st) {
 }
 
 function renderTraits(st) {
-  return h('div', { class: 'vct4_tab_content' },
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Traits'),
-      renderList(st.traits, (t) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, t.name, t.type ? pill(t.type) : ''),
-          t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
-          t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null,
-        ), 'No traits loaded. Click Populate.'
-      ),
+  const wrap = h('div', { class: 'vct4_tab_content' });
+
+  // Controls: Category filter and add button
+  const controls = h('div', { class: 'vct4_controls' });
+
+  // Category filter tabs
+  const catFilter = h('div', { class: 'vct4_filter_group' },
+    h('span', { class: 'vct4_filter_label' }, 'Category:'),
+    h('button', { class: `vct4_filter_btn ${UI.traitsCategory === 'all' ? 'active' : ''}`, onclick: () => { UI.traitsCategory = 'all'; render(); } }, 'All'),
+    ...TRAIT_CATEGORIES.map(cat =>
+      h('button', { class: `vct4_filter_btn ${UI.traitsCategory === cat ? 'active' : ''}`, onclick: () => { UI.traitsCategory = cat; render(); } }, cat)
     )
   );
+  controls.appendChild(catFilter);
+
+  // Add button
+  const addBtn = h('button', { class: 'vct4_btn vct4_btn_add', onclick: () => openItemModal('traits', 'add') }, '+ Add Trait');
+  controls.appendChild(addBtn);
+
+  wrap.appendChild(controls);
+
+  // Filter traits by category
+  let filteredTraits = st.traits;
+  if (UI.traitsCategory !== 'all') {
+    filteredTraits = st.traits.filter(t => (t.category || t.type) === UI.traitsCategory);
+  }
+
+  // Group traits by category for display
+  const grouped = {};
+  for (const cat of TRAIT_CATEGORIES) {
+    grouped[cat] = filteredTraits.filter(t => (t.category || t.type) === cat);
+  }
+  const uncategorized = filteredTraits.filter(t => !t.category && !t.type);
+
+  // Render each category that has traits
+  if (UI.traitsCategory === 'all') {
+    // Show all categories with their traits
+    for (const cat of TRAIT_CATEGORIES) {
+      if (grouped[cat].length === 0) continue;
+
+      const sec = h('div', { class: 'vct4_section' },
+        h('div', { class: 'vct4_h2' }, `${cat} Traits`, pill(`${grouped[cat].length}`))
+      );
+
+      sec.appendChild(renderList(grouped[cat], (t) => {
+        const idx = st.traits.indexOf(t);
+        return h('div', { class: 'vct4_card vct4_card_clickable', onclick: () => openItemModal('traits', 'edit', t, idx) },
+          h('div', { class: 'vct4_card_title' },
+            t.name,
+            t.source ? pill(t.source) : ''
+          ),
+          t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
+          t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null
+        );
+      }));
+
+      wrap.appendChild(sec);
+    }
+
+    // Uncategorized traits
+    if (uncategorized.length > 0) {
+      const sec = h('div', { class: 'vct4_section' },
+        h('div', { class: 'vct4_h2' }, 'Other Traits', pill(`${uncategorized.length}`))
+      );
+
+      sec.appendChild(renderList(uncategorized, (t) => {
+        const idx = st.traits.indexOf(t);
+        return h('div', { class: 'vct4_card vct4_card_clickable', onclick: () => openItemModal('traits', 'edit', t, idx) },
+          h('div', { class: 'vct4_card_title' },
+            t.name,
+            t.type ? pill(t.type) : '',
+            t.source ? pill(t.source) : ''
+          ),
+          t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
+          t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null
+        );
+      }));
+
+      wrap.appendChild(sec);
+    }
+  } else {
+    // Show only selected category
+    const sec = h('div', { class: 'vct4_section' },
+      h('div', { class: 'vct4_h2' }, `${UI.traitsCategory} Traits`, pill(`${filteredTraits.length}`))
+    );
+
+    sec.appendChild(renderList(filteredTraits, (t) => {
+      const idx = st.traits.indexOf(t);
+      return h('div', { class: 'vct4_card vct4_card_clickable', onclick: () => openItemModal('traits', 'edit', t, idx) },
+        h('div', { class: 'vct4_card_title' },
+          t.name,
+          t.source ? pill(t.source) : ''
+        ),
+        t.description ? h('div', { class: 'vct4_card_text' }, t.description) : null,
+        t.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${t.effect}`) : null
+      );
+    }, `No ${UI.traitsCategory.toLowerCase()} traits found.`));
+
+    wrap.appendChild(sec);
+  }
+
+  // Show empty state if no traits at all
+  if (st.traits.length === 0) {
+    wrap.appendChild(h('div', { class: 'vct4_section' },
+      h('div', { class: 'vct4_h2' }, 'Traits'),
+      h('div', { class: 'vct4_empty' }, 'No traits loaded. Click Populate or Add Trait.')
+    ));
+  }
+
+  return wrap;
 }
 
 function renderTitles(st) {
@@ -706,39 +1188,270 @@ function renderEquipment(st) {
 }
 
 function renderSkills(st) {
-  return h('div', { class: 'vct4_tab_content' },
-    h('div', { class: 'vct4_section' },
-      h('div', { class: 'vct4_h2' }, 'Skills'),
-      renderList(st.skills, (sk) =>
-        h('div', { class: 'vct4_card' },
-          h('div', { class: 'vct4_card_title' }, sk.name, sk.level ? pill(`Lv ${sk.level}`) : ''),
-          sk.description ? h('div', { class: 'vct4_card_text' }, sk.description) : null,
-          sk.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${sk.effect}`) : null,
-        ), 'No skills loaded. Click Populate.'
-      ),
+  const wrap = h('div', { class: 'vct4_tab_content' });
+
+  // Ensure proficiencies exist (for older state)
+  if (!st.proficiencies) {
+    st.proficiencies = {
+      weapons: { swords: false, axes: false, bows: false, daggers: false, staves: false, polearms: false, hammers: false, crossbows: false, thrown: false, unarmed: false },
+      armor: { light: false, medium: false, heavy: false, shields: false },
+      tools: { alchemist: false, blacksmith: false, herbalist: false, lockpicking: false, cartography: false, cooking: false, jeweler: false, leatherworker: false },
+      languages: { common: false, elvish: false, dwarvish: false, orcish: false, draconic: false, infernal: false, celestial: false, primordial: false, abyssal: false, sylvan: false },
+      vehicles: { landMounts: false, watercraft: false, airships: false, carts: false, warMachines: false }
+    };
+  }
+
+  // Filter controls
+  const controls = h('div', { class: 'vct4_controls' });
+
+  // Active/Passive filter
+  const typeFilter = h('div', { class: 'vct4_filter_group' },
+    h('span', { class: 'vct4_filter_label' }, 'Type:'),
+    h('button', { class: `vct4_filter_btn ${UI.skillsFilter === 'all' ? 'active' : ''}`, onclick: () => { UI.skillsFilter = 'all'; render(); } }, 'All'),
+    h('button', { class: `vct4_filter_btn ${UI.skillsFilter === 'active' ? 'active' : ''}`, onclick: () => { UI.skillsFilter = 'active'; render(); } }, 'Active'),
+    h('button', { class: `vct4_filter_btn ${UI.skillsFilter === 'passive' ? 'active' : ''}`, onclick: () => { UI.skillsFilter = 'passive'; render(); } }, 'Passive')
+  );
+  controls.appendChild(typeFilter);
+
+  // Category filter
+  const catFilter = h('div', { class: 'vct4_filter_group' },
+    h('span', { class: 'vct4_filter_label' }, 'Category:'),
+    h('button', { class: `vct4_filter_btn ${UI.skillsCategory === 'all' ? 'active' : ''}`, onclick: () => { UI.skillsCategory = 'all'; render(); } }, 'All'),
+    ...SKILL_CATEGORIES.map(cat =>
+      h('button', { class: `vct4_filter_btn ${UI.skillsCategory === cat ? 'active' : ''}`, onclick: () => { UI.skillsCategory = cat; render(); } }, cat)
     )
   );
+  controls.appendChild(catFilter);
+
+  // Add button
+  const addBtn = h('button', { class: 'vct4_btn vct4_btn_add', onclick: () => openItemModal('skills', 'add') }, '+ Add Skill');
+  controls.appendChild(addBtn);
+
+  wrap.appendChild(controls);
+
+  // Filter skills
+  let filteredSkills = st.skills.filter(sk => {
+    if (UI.skillsFilter === 'active' && sk.isPassive) return false;
+    if (UI.skillsFilter === 'passive' && !sk.isPassive) return false;
+    if (UI.skillsCategory !== 'all' && sk.category !== UI.skillsCategory) return false;
+    return true;
+  });
+
+  // Active Skills section
+  const activeSkills = filteredSkills.filter(sk => !sk.isPassive);
+  if (UI.skillsFilter === 'all' || UI.skillsFilter === 'active') {
+    const activeSec = h('div', { class: 'vct4_section' },
+      h('div', { class: 'vct4_h2' }, 'Active Skills', pill(`${activeSkills.length}`)),
+      renderList(activeSkills, (sk) => {
+        const idx = st.skills.indexOf(sk);
+        return h('div', { class: 'vct4_card vct4_card_clickable', onclick: () => openItemModal('skills', 'edit', sk, idx) },
+          h('div', { class: 'vct4_card_title' },
+            sk.name,
+            sk.level ? pill(`Lv ${sk.level}`) : '',
+            sk.category ? pill(sk.category) : ''
+          ),
+          sk.description ? h('div', { class: 'vct4_card_text' }, sk.description) : null,
+          h('div', { class: 'vct4_skill_meta' },
+            sk.resourceType && sk.resourceType !== 'None' && sk.resourceCost ? h('span', {}, `Cost: ${sk.resourceCost} ${sk.resourceType}`) : null,
+            sk.cooldown ? h('span', {}, `CD: ${sk.cooldown}`) : null,
+            sk.damageEffect ? h('span', {}, `Effect: ${sk.damageEffect}`) : null
+          )
+        );
+      }, 'No active skills.')
+    );
+    wrap.appendChild(activeSec);
+  }
+
+  // Passive Skills section
+  const passiveSkills = filteredSkills.filter(sk => sk.isPassive);
+  if (UI.skillsFilter === 'all' || UI.skillsFilter === 'passive') {
+    const passiveSec = h('div', { class: 'vct4_section' },
+      h('div', { class: 'vct4_h2' }, 'Passive Skills', pill(`${passiveSkills.length}`)),
+      renderList(passiveSkills, (sk) => {
+        const idx = st.skills.indexOf(sk);
+        return h('div', { class: 'vct4_card vct4_card_clickable', onclick: () => openItemModal('skills', 'edit', sk, idx) },
+          h('div', { class: 'vct4_card_title' },
+            sk.name,
+            sk.level ? pill(`Lv ${sk.level}`) : '',
+            sk.category ? pill(sk.category) : ''
+          ),
+          sk.description ? h('div', { class: 'vct4_card_text' }, sk.description) : null,
+          sk.damageEffect || sk.effect ? h('div', { class: 'vct4_card_text vct4_dim' }, `Effect: ${sk.damageEffect || sk.effect}`) : null
+        );
+      }, 'No passive skills.')
+    );
+    wrap.appendChild(passiveSec);
+  }
+
+  // Proficiencies section
+  const profSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Proficiencies')
+  );
+
+  const profCategories = [
+    { key: 'weapons', label: 'Weapons', items: st.proficiencies.weapons },
+    { key: 'armor', label: 'Armor', items: st.proficiencies.armor },
+    { key: 'tools', label: 'Tools', items: st.proficiencies.tools },
+    { key: 'languages', label: 'Languages', items: st.proficiencies.languages },
+    { key: 'vehicles', label: 'Vehicles', items: st.proficiencies.vehicles }
+  ];
+
+  for (const cat of profCategories) {
+    const catDiv = h('div', { class: 'vct4_prof_category' },
+      h('div', { class: 'vct4_prof_label' }, cat.label)
+    );
+
+    const checkboxes = h('div', { class: 'vct4_prof_grid' });
+    for (const [itemKey, isChecked] of Object.entries(cat.items)) {
+      const label = itemKey.charAt(0).toUpperCase() + itemKey.slice(1).replace(/([A-Z])/g, ' $1');
+      const cb = h('label', { class: 'vct4_prof_item' },
+        h('input', {
+          type: 'checkbox',
+          checked: isChecked,
+          onchange: async (e) => {
+            st.proficiencies[cat.key][itemKey] = e.target.checked;
+            await commitState(st);
+            updateInjection();
+          }
+        }),
+        h('span', {}, label)
+      );
+      checkboxes.appendChild(cb);
+    }
+    catDiv.appendChild(checkboxes);
+    profSec.appendChild(catDiv);
+  }
+
+  wrap.appendChild(profSec);
+  return wrap;
 }
 
 function renderSpells(st) {
-  // Allow quick inline editing of Current Mana/Effect
   const wrap = h('div', { class: 'vct4_tab_content' });
+
+  // Ensure spellSlots exist (for older state)
+  if (!st.spellSlots) {
+    st.spellSlots = {
+      1: { used: 0, max: 0 }, 2: { used: 0, max: 0 }, 3: { used: 0, max: 0 },
+      4: { used: 0, max: 0 }, 5: { used: 0, max: 0 }, 6: { used: 0, max: 0 },
+      7: { used: 0, max: 0 }, 8: { used: 0, max: 0 }, 9: { used: 0, max: 0 }
+    };
+  }
+
+  // Controls: Filter by school, sort, add button
+  const controls = h('div', { class: 'vct4_controls' });
+
+  // School filter
+  const schoolFilter = h('div', { class: 'vct4_filter_group' },
+    h('span', { class: 'vct4_filter_label' }, 'School:'),
+    h('select', { class: 'vct4_select', onchange: (e) => { UI.spellsSchool = e.target.value; render(); } },
+      h('option', { value: 'all', selected: UI.spellsSchool === 'all' }, 'All'),
+      ...SPELL_SCHOOLS.map(s => h('option', { value: s, selected: UI.spellsSchool === s }, s))
+    )
+  );
+  controls.appendChild(schoolFilter);
+
+  // Sort options
+  const sortFilter = h('div', { class: 'vct4_filter_group' },
+    h('span', { class: 'vct4_filter_label' }, 'Sort:'),
+    h('button', { class: `vct4_filter_btn ${UI.spellsSort === 'name' ? 'active' : ''}`, onclick: () => { UI.spellsSort = 'name'; render(); } }, 'Name'),
+    h('button', { class: `vct4_filter_btn ${UI.spellsSort === 'cost' ? 'active' : ''}`, onclick: () => { UI.spellsSort = 'cost'; render(); } }, 'Cost'),
+    h('button', { class: `vct4_filter_btn ${UI.spellsSort === 'damage' ? 'active' : ''}`, onclick: () => { UI.spellsSort = 'damage'; render(); } }, 'Level')
+  );
+  controls.appendChild(sortFilter);
+
+  // Add button
+  const addBtn = h('button', { class: 'vct4_btn vct4_btn_add', onclick: () => openItemModal('spells', 'add') }, '+ Add Spell');
+  controls.appendChild(addBtn);
+
+  wrap.appendChild(controls);
+
+  // Spell Slots section
+  const slotsSec = h('div', { class: 'vct4_section' },
+    h('div', { class: 'vct4_h2' }, 'Spell Slots')
+  );
+
+  const slotsGrid = h('div', { class: 'vct4_slots_grid' });
+  for (let lvl = 1; lvl <= 9; lvl++) {
+    const slot = st.spellSlots[lvl] || { used: 0, max: 0 };
+    const slotDiv = h('div', { class: 'vct4_slot_box' },
+      h('div', { class: 'vct4_slot_level' }, `Lv ${lvl}`),
+      h('div', { class: 'vct4_slot_tracker' },
+        h('input', {
+          type: 'number', class: 'vct4_slot_input', value: slot.used, min: 0,
+          onchange: async (e) => {
+            st.spellSlots[lvl].used = Math.max(0, parseInt(e.target.value) || 0);
+            await commitState(st);
+            updateInjection();
+          }
+        }),
+        h('span', { class: 'vct4_slot_sep' }, '/'),
+        h('input', {
+          type: 'number', class: 'vct4_slot_input', value: slot.max, min: 0,
+          onchange: async (e) => {
+            st.spellSlots[lvl].max = Math.max(0, parseInt(e.target.value) || 0);
+            await commitState(st);
+            updateInjection();
+          }
+        })
+      )
+    );
+    slotsGrid.appendChild(slotDiv);
+  }
+  slotsSec.appendChild(slotsGrid);
+
+  const resetBtn = h('button', { class: 'vct4_btn vct4_btn_small', onclick: async () => {
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      st.spellSlots[lvl].used = 0;
+    }
+    await commitState(st);
+    render();
+    updateInjection();
+  }}, 'Reset Used Slots');
+  slotsSec.appendChild(resetBtn);
+
+  wrap.appendChild(slotsSec);
+
+  // Spells list section
   const sec = h('div', { class: 'vct4_section' },
-    h('div', { class: 'vct4_h2' }, 'Spells'),
+    h('div', { class: 'vct4_h2' }, 'Spells', pill(`${st.spells?.length || 0}`))
   );
 
   if (!st.spells || st.spells.length === 0) {
-    sec.appendChild(h('div', { class: 'vct4_empty' }, 'No spells loaded. Click Populate.'));
+    sec.appendChild(h('div', { class: 'vct4_empty' }, 'No spells loaded. Click Populate or Add Spell.'));
     wrap.appendChild(sec);
     return wrap;
   }
 
-  for (const sp of st.spells) {
+  // Filter and sort spells
+  let filteredSpells = st.spells.filter(sp => {
+    if (UI.spellsSchool !== 'all' && sp.school !== UI.spellsSchool) return false;
+    return true;
+  });
+
+  // Sort
+  filteredSpells.sort((a, b) => {
+    if (UI.spellsSort === 'name') return (a.name || '').localeCompare(b.name || '');
+    if (UI.spellsSort === 'cost') return (a.currentMana || a.defaultMana || 0) - (b.currentMana || b.defaultMana || 0);
+    if (UI.spellsSort === 'damage') return (a.level || 0) - (b.level || 0);
+    return 0;
+  });
+
+  for (const sp of filteredSpells) {
+    const idx = st.spells.indexOf(sp);
     const card = h('div', { class: 'vct4_card' });
-    const top = h('div', { class: 'vct4_card_title' }, sp.name);
-    if (sp.school) top.appendChild(pill(sp.school));
-    if (sp.level) top.appendChild(pill(`Lv ${sp.level}`));
-    card.appendChild(top);
+
+    // Title bar with edit button
+    const titleRow = h('div', { class: 'vct4_card_header' },
+      h('div', { class: 'vct4_card_title' },
+        sp.name,
+        sp.school ? pill(sp.school) : '',
+        sp.level != null ? pill(`Lv ${sp.level}`) : '',
+        sp.concentration ? pill('Conc.') : ''
+      ),
+      h('button', { class: 'vct4_btn vct4_btn_small', onclick: (e) => { e.stopPropagation(); openItemModal('spells', 'edit', sp, idx); } }, 'Edit')
+    );
+    card.appendChild(titleRow);
 
     if (sp.description) card.appendChild(h('div', { class: 'vct4_card_text' }, sp.description));
 
@@ -746,17 +1459,22 @@ function renderSpells(st) {
       h('div', { class: 'vct4_spell_k' }, 'Default MP Cost'),
       h('div', { class: 'vct4_spell_v' }, sp.defaultMana ?? '—'),
       h('div', { class: 'vct4_spell_k' }, 'Current MP Cost'),
-      h('div', { class: 'vct4_spell_v' },
-        spellEditNumber(sp, 'currentMana', st)
-      ),
+      h('div', { class: 'vct4_spell_v' }, spellEditNumber(sp, 'currentMana', st)),
       h('div', { class: 'vct4_spell_k' }, 'Default Effect'),
       h('div', { class: 'vct4_spell_v' }, sp.defaultEffect ?? '—'),
       h('div', { class: 'vct4_spell_k' }, 'Current Effect'),
-      h('div', { class: 'vct4_spell_v' },
-        spellEditText(sp, 'currentEffect', st)
-      ),
+      h('div', { class: 'vct4_spell_v' }, spellEditText(sp, 'currentEffect', st))
     );
+
+    // Additional info row
+    const infoRow = h('div', { class: 'vct4_spell_info' },
+      sp.castingTime ? h('span', {}, `Cast: ${sp.castingTime}`) : null,
+      sp.range ? h('span', {}, `Range: ${sp.range}`) : null,
+      sp.duration ? h('span', {}, `Duration: ${sp.duration}`) : null
+    );
+
     card.appendChild(grid);
+    if (sp.castingTime || sp.range || sp.duration) card.appendChild(infoRow);
 
     sec.appendChild(card);
   }
@@ -953,6 +1671,7 @@ function buildInjectedPrompt(st, s) {
   lines.push(`- [Status +\"Poisoned\"] / [Status -\"Poisoned\"]`);
   lines.push(`- [Location = \"Stormkeep Gate\"]`);
   lines.push(`- [Spell \"Lightning Bolt\" current_mp=8 current_effect=\"3d8 + Burn\"]`);
+  lines.push(`- [SpellSlot level=3 used=2]`);
   lines.push(`Never fabricate changes: only output MECHANICS entries when a change actually occurred.`);
 
   // Character
@@ -969,6 +1688,71 @@ function buildInjectedPrompt(st, s) {
   lines.push(`Gold ${st.resources.currencies.Gold ?? 0} | Silver ${st.resources.currencies.Silver ?? 0} | Copper ${st.resources.currencies.Copper ?? 0}`);
   lines.push(`Regen/min: HP ${fmt(st.resources.regenPerMinute.HP)} | MP ${fmt(st.resources.regenPerMinute.MP)} | SP ${fmt(st.resources.regenPerMinute.SP)}`);
 
+  // Skills (enhanced with categories and types)
+  lines.push(``);
+  lines.push(`== SKILLS ==`);
+  if (!st.skills.length) {
+    lines.push(`(none)`);
+  } else {
+    const activeSkills = st.skills.filter(sk => !sk.isPassive);
+    const passiveSkills = st.skills.filter(sk => sk.isPassive);
+
+    if (activeSkills.length) {
+      lines.push(`Active Skills:`);
+      for (const sk of activeSkills.slice(0, max)) {
+        const costInfo = sk.resourceType && sk.resourceType !== 'None' && sk.resourceCost ? `${sk.resourceCost} ${sk.resourceType}` : '';
+        const cdInfo = sk.cooldown ? `CD: ${sk.cooldown}` : '';
+        const effectInfo = sk.damageEffect || sk.effect || '';
+        if (compact) {
+          lines.push(`- ${sk.name}${sk.level ? ` Lv${sk.level}` : ''}${sk.category ? ` [${sk.category}]` : ''}: ${truncate(sk.description, 100)}${costInfo ? ` | Cost: ${costInfo}` : ''}${cdInfo ? ` | ${cdInfo}` : ''}${effectInfo ? ` | Effect: ${truncate(effectInfo, 80)}` : ''}`);
+        } else {
+          lines.push(`- ${sk.name}${sk.level ? ` (Lv ${sk.level})` : ''}${sk.category ? ` [${sk.category}]` : ''}`);
+          if (sk.description) lines.push(`  desc: ${sk.description}`);
+          if (costInfo || cdInfo) lines.push(`  ${costInfo}${costInfo && cdInfo ? ' | ' : ''}${cdInfo}`);
+          if (effectInfo) lines.push(`  effect: ${effectInfo}`);
+        }
+      }
+    }
+
+    if (passiveSkills.length) {
+      lines.push(`Passive Skills:`);
+      for (const sk of passiveSkills.slice(0, max)) {
+        const effectInfo = sk.damageEffect || sk.effect || '';
+        if (compact) {
+          lines.push(`- ${sk.name}${sk.level ? ` Lv${sk.level}` : ''}${sk.category ? ` [${sk.category}]` : ''}: ${truncate(effectInfo || sk.description, 160)}`);
+        } else {
+          lines.push(`- ${sk.name}${sk.level ? ` (Lv ${sk.level})` : ''}${sk.category ? ` [${sk.category}]` : ''}`);
+          if (sk.description) lines.push(`  desc: ${sk.description}`);
+          if (effectInfo) lines.push(`  always-on effect: ${effectInfo}`);
+        }
+      }
+    }
+  }
+
+  // Proficiencies (compact list)
+  if (st.proficiencies) {
+    const profLines = [];
+    for (const [category, items] of Object.entries(st.proficiencies)) {
+      const active = Object.entries(items).filter(([, v]) => v).map(([k]) => k);
+      if (active.length) profLines.push(`${capitalize(category)}: ${active.join(', ')}`);
+    }
+    if (profLines.length) {
+      lines.push(``);
+      lines.push(`== PROFICIENCIES ==`);
+      for (const pl of profLines) lines.push(`- ${pl}`);
+    }
+  }
+
+  // Spell Slots
+  if (st.spellSlots) {
+    const slotsWithMax = Object.entries(st.spellSlots).filter(([, v]) => v.max > 0);
+    if (slotsWithMax.length) {
+      lines.push(``);
+      lines.push(`== SPELL SLOTS ==`);
+      lines.push(slotsWithMax.map(([lvl, v]) => `Lv${lvl}: ${v.used}/${v.max}`).join(' | '));
+    }
+  }
+
   // Spells (compact, but include default/current cost/effect as requested)
   lines.push(``);
   lines.push(`== SPELLS ==`);
@@ -978,24 +1762,36 @@ function buildInjectedPrompt(st, s) {
     const spells = st.spells.slice(0, max);
     for (const sp of spells) {
       if (compact) {
-        lines.push(`- ${sp.name}: ${truncate(sp.description, 160)} | default_mp=${fmt(sp.defaultMana)} current_mp=${fmt(sp.currentMana)} | default=${truncate(sp.defaultEffect, 140)} | current=${truncate(sp.currentEffect, 140)}`);
+        const extras = [];
+        if (sp.school) extras.push(sp.school);
+        if (sp.concentration) extras.push('Concentration');
+        if (sp.castingTime) extras.push(`Cast: ${sp.castingTime}`);
+        if (sp.range) extras.push(`Range: ${sp.range}`);
+        if (sp.duration) extras.push(`Duration: ${sp.duration}`);
+        lines.push(`- ${sp.name}${sp.level != null ? ` Lv${sp.level}` : ''}: ${truncate(sp.description, 120)} | default_mp=${fmt(sp.defaultMana)} current_mp=${fmt(sp.currentMana)} | default=${truncate(sp.defaultEffect, 100)} | current=${truncate(sp.currentEffect, 100)}${extras.length ? ` | ${extras.join(', ')}` : ''}`);
       } else {
-        lines.push(`- ${sp.name}`);
+        lines.push(`- ${sp.name}${sp.level != null ? ` (Lv ${sp.level})` : ''}${sp.school ? ` [${sp.school}]` : ''}`);
         lines.push(`  desc: ${sp.description || '—'}`);
         lines.push(`  default_mp: ${fmt(sp.defaultMana)} | current_mp: ${fmt(sp.currentMana)}`);
         lines.push(`  default_effect: ${sp.defaultEffect || '—'}`);
         lines.push(`  current_effect: ${sp.currentEffect || '—'}`);
+        if (sp.castingTime || sp.range || sp.duration) {
+          lines.push(`  cast: ${sp.castingTime || '—'} | range: ${sp.range || '—'} | duration: ${sp.duration || '—'}${sp.concentration ? ' (Concentration)' : ''}`);
+        }
       }
     }
     if (st.spells.length > max) lines.push(`(+${st.spells.length - max} more spells not shown)`);
   }
 
-  // Traits/Titles/Modifiers (short summaries)
+  // Traits (enhanced with categories)
   lines.push(``);
   lines.push(`== TRAITS ==`);
   if (!st.traits.length) lines.push(`(none)`);
   else {
-    for (const t of st.traits.slice(0, Math.min(max, 40))) lines.push(`- ${t.name}: ${truncate(t.effect || t.description, 180)}`);
+    for (const t of st.traits.slice(0, Math.min(max, 40))) {
+      const cat = t.category || t.type;
+      lines.push(`- ${t.name}${cat ? ` [${cat}]` : ''}${t.source ? ` (${t.source})` : ''}: ${truncate(t.effect || t.description, 160)}`);
+    }
     if (st.traits.length > 40) lines.push(`(+${st.traits.length - 40} more traits not shown)`);
   }
 
@@ -1534,6 +2330,24 @@ function applyTag(st, tag) {
     const effM = rest.match(/current_effect\s*=\s*"(.*)"/i);
     if (effM) sp.currentEffect = effM[1].trim();
 
+    return true;
+  }
+
+  // SpellSlot update: SpellSlot level=3 used=2
+  m = tag.match(/^SpellSlot\s+level\s*=\s*(\d+)\s+used\s*=\s*(\d+)/i);
+  if (m) {
+    const level = Number(m[1]);
+    const used = Number(m[2]);
+    if (!st.spellSlots) {
+      st.spellSlots = {
+        1: { used: 0, max: 0 }, 2: { used: 0, max: 0 }, 3: { used: 0, max: 0 },
+        4: { used: 0, max: 0 }, 5: { used: 0, max: 0 }, 6: { used: 0, max: 0 },
+        7: { used: 0, max: 0 }, 8: { used: 0, max: 0 }, 9: { used: 0, max: 0 }
+      };
+    }
+    if (st.spellSlots[level]) {
+      st.spellSlots[level].used = Math.max(0, used);
+    }
     return true;
   }
 
