@@ -21,6 +21,9 @@ import {
 import { renderOverviewTab } from './tabs/overview.js';
 import { renderStatsTab } from './tabs/stats.js';
 import { renderClassLevelTab } from './tabs/class-level.js';
+import { renderSkillsTab } from './tabs/skills.js';
+import { renderSpellsTab } from './tabs/spells.js';
+import { renderTraitsTab } from './tabs/traits.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -62,7 +65,10 @@ const UI = {
 const TABS = [
     { key: 'overview', label: 'Overview', icon: '' },
     { key: 'stats', label: 'Stats', icon: '' },
-    { key: 'class', label: 'Class', icon: '' }
+    { key: 'class', label: 'Class', icon: '' },
+    { key: 'skills', label: 'Skills', icon: '' },
+    { key: 'spells', label: 'Spells', icon: '' },
+    { key: 'traits', label: 'Traits', icon: '' }
 ];
 
 // Cleanup tracking
@@ -537,6 +543,456 @@ function openModal(type, data = {}) {
             );
             break;
 
+        // ===== Skills Modals =====
+        case 'add-active-skill':
+        case 'edit-active-skill':
+            titleEl.textContent = type === 'add-active-skill' ? 'Add Active Skill' : 'Edit Active Skill';
+            const activeSkill = data.skill || { name: '', description: '', cooldown: '', resourceCost: '', rank: 1, damageEffect: '', category: 'Combat' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Skill Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_skill_name',
+                        value: activeSkill.name,
+                        placeholder: 'e.g., Power Strike'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_skill_desc',
+                        placeholder: 'Describe the skill...'
+                    }, activeSkill.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Category'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_skill_category' },
+                            ['Combat', 'Magic', 'Utility', 'Social', 'Crafting'].map(cat =>
+                                h('option', { value: cat, selected: activeSkill.category === cat ? 'selected' : null }, cat)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Rank'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_skill_rank',
+                            value: activeSkill.rank || 1,
+                            min: 1,
+                            max: 99
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Cooldown'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_skill_cooldown',
+                            value: activeSkill.cooldown || '',
+                            placeholder: 'e.g., 3 turns'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Resource Cost'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_skill_cost',
+                            value: activeSkill.resourceCost || '',
+                            placeholder: 'e.g., 20 MP'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Damage/Effect'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_skill_damage',
+                        value: activeSkill.damageEffect || '',
+                        placeholder: 'e.g., 2d6+STR damage'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const skill = {
+                            name: document.getElementById('vmt_skill_name').value.trim(),
+                            description: document.getElementById('vmt_skill_desc').value.trim(),
+                            category: document.getElementById('vmt_skill_category').value,
+                            rank: parseInt(document.getElementById('vmt_skill_rank').value, 10) || 1,
+                            cooldown: document.getElementById('vmt_skill_cooldown').value.trim(),
+                            resourceCost: document.getElementById('vmt_skill_cost').value.trim(),
+                            damageEffect: document.getElementById('vmt_skill_damage').value.trim()
+                        };
+                        if (skill.name) {
+                            data.onSave(skill);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        case 'add-passive-skill':
+        case 'edit-passive-skill':
+            titleEl.textContent = type === 'add-passive-skill' ? 'Add Passive Skill' : 'Edit Passive Skill';
+            const passiveSkill = data.skill || { name: '', description: '', effect: '', category: 'Combat' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Skill Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_pskill_name',
+                        value: passiveSkill.name,
+                        placeholder: 'e.g., Iron Will'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_pskill_desc',
+                        placeholder: 'Describe the skill...'
+                    }, passiveSkill.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Category'),
+                    h('select', { class: 'vmt_modal_select', id: 'vmt_pskill_category' },
+                        ['Combat', 'Magic', 'Utility', 'Social', 'Crafting'].map(cat =>
+                            h('option', { value: cat, selected: passiveSkill.category === cat ? 'selected' : null }, cat)
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Effect'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_pskill_effect',
+                        value: passiveSkill.effect || '',
+                        placeholder: 'e.g., +10% mental resistance'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const skill = {
+                            name: document.getElementById('vmt_pskill_name').value.trim(),
+                            description: document.getElementById('vmt_pskill_desc').value.trim(),
+                            category: document.getElementById('vmt_pskill_category').value,
+                            effect: document.getElementById('vmt_pskill_effect').value.trim()
+                        };
+                        if (skill.name) {
+                            data.onSave(skill);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Spell Modals =====
+        case 'add-spell':
+        case 'edit-spell':
+            titleEl.textContent = type === 'add-spell' ? 'Add Spell' : 'Edit Spell';
+            const spell = data.spell || {
+                name: '', description: '', school: 'Evocation', level: 1,
+                defaultManaCost: 0, currentManaCost: 0,
+                defaultDamageEffect: '', currentDamageEffect: '',
+                castingTime: '', range: '', duration: '', concentration: false
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Spell Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_spell_name',
+                        value: spell.name,
+                        placeholder: 'e.g., Fireball'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_spell_desc',
+                        placeholder: 'Describe the spell...'
+                    }, spell.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'School/Element'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_spell_school' },
+                            ['Evocation', 'Conjuration', 'Abjuration', 'Transmutation', 'Divination', 'Enchantment', 'Illusion', 'Necromancy',
+                             'Fire', 'Ice', 'Lightning', 'Earth', 'Water', 'Wind', 'Light', 'Dark', 'Arcane', 'Nature', 'Holy', 'Unholy'].map(s =>
+                                h('option', { value: s, selected: spell.school === s ? 'selected' : null }, s)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Spell Level'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_level',
+                            value: spell.level ?? 1,
+                            min: 0,
+                            max: 9
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Default Mana Cost'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_mana_default',
+                            value: spell.defaultManaCost || 0,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Current Mana Cost'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_mana_current',
+                            value: spell.currentManaCost || spell.defaultManaCost || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Default Damage/Effect'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_damage_default',
+                            value: spell.defaultDamageEffect || '',
+                            placeholder: 'e.g., 8d6 fire'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Current Damage/Effect'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_damage_current',
+                            value: spell.currentDamageEffect || spell.defaultDamageEffect || '',
+                            placeholder: 'e.g., 10d6 fire'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Casting Time'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_cast',
+                            value: spell.castingTime || '',
+                            placeholder: '1 action'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Range'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_range',
+                            value: spell.range || '',
+                            placeholder: '120 ft'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Duration'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_spell_duration',
+                            value: spell.duration || '',
+                            placeholder: 'Instant'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_checkbox_label' },
+                        h('input', {
+                            type: 'checkbox',
+                            id: 'vmt_spell_conc',
+                            checked: spell.concentration ? 'checked' : null
+                        }),
+                        h('span', {}, ' Requires Concentration')
+                    )
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newSpell = {
+                            name: document.getElementById('vmt_spell_name').value.trim(),
+                            description: document.getElementById('vmt_spell_desc').value.trim(),
+                            school: document.getElementById('vmt_spell_school').value,
+                            level: parseInt(document.getElementById('vmt_spell_level').value, 10) || 0,
+                            defaultManaCost: parseInt(document.getElementById('vmt_spell_mana_default').value, 10) || 0,
+                            currentManaCost: parseInt(document.getElementById('vmt_spell_mana_current').value, 10) || 0,
+                            defaultDamageEffect: document.getElementById('vmt_spell_damage_default').value.trim(),
+                            currentDamageEffect: document.getElementById('vmt_spell_damage_current').value.trim(),
+                            castingTime: document.getElementById('vmt_spell_cast').value.trim(),
+                            range: document.getElementById('vmt_spell_range').value.trim(),
+                            duration: document.getElementById('vmt_spell_duration').value.trim(),
+                            concentration: document.getElementById('vmt_spell_conc').checked
+                        };
+                        if (newSpell.name) {
+                            data.onSave(newSpell);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Trait Modals =====
+        case 'add-trait':
+        case 'edit-trait':
+            titleEl.textContent = type === 'add-trait' ? 'Add Trait' : 'Edit Trait';
+            const trait = data.trait || { name: '', description: '', source: '', mechanicalEffect: '', category: 'innate' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Trait Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_trait_name',
+                        value: trait.name,
+                        placeholder: 'e.g., Darkvision'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_trait_desc',
+                        placeholder: 'Describe the trait...'
+                    }, trait.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Category'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_trait_category' },
+                            [
+                                { key: 'innate', label: 'Innate' },
+                                { key: 'acquired', label: 'Acquired' },
+                                { key: 'racial', label: 'Racial' },
+                                { key: 'background', label: 'Background' }
+                            ].map(cat =>
+                                h('option', { value: cat.key, selected: trait.category === cat.key ? 'selected' : null }, cat.label)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Source'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_trait_source',
+                            value: trait.source || '',
+                            placeholder: 'e.g., Elf heritage'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Mechanical Effect'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_trait_effect',
+                        value: trait.mechanicalEffect || '',
+                        placeholder: 'e.g., See in darkness up to 60 ft'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newTrait = {
+                            name: document.getElementById('vmt_trait_name').value.trim(),
+                            description: document.getElementById('vmt_trait_desc').value.trim(),
+                            category: document.getElementById('vmt_trait_category').value,
+                            source: document.getElementById('vmt_trait_source').value.trim(),
+                            mechanicalEffect: document.getElementById('vmt_trait_effect').value.trim()
+                        };
+                        if (newTrait.name) {
+                            data.onSave(newTrait);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
         default:
             titleEl.textContent = 'Modal';
             bodyEl.textContent = 'Unknown modal type';
@@ -583,6 +1039,15 @@ function render() {
             break;
         case 'class':
             body.appendChild(renderClassLevelTab(openModal, render));
+            break;
+        case 'skills':
+            body.appendChild(renderSkillsTab(openModal, render));
+            break;
+        case 'spells':
+            body.appendChild(renderSpellsTab(openModal, render));
+            break;
+        case 'traits':
+            body.appendChild(renderTraitsTab(openModal, render));
             break;
         default:
             body.textContent = 'Unknown tab';
