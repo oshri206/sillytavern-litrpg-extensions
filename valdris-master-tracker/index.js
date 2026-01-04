@@ -24,6 +24,10 @@ import { renderClassLevelTab } from './tabs/class-level.js';
 import { renderSkillsTab } from './tabs/skills.js';
 import { renderSpellsTab } from './tabs/spells.js';
 import { renderTraitsTab } from './tabs/traits.js';
+import { renderTitlesTab } from './tabs/titles.js';
+import { renderModifiersTab } from './tabs/modifiers.js';
+import { renderEquipmentTab } from './tabs/equipment.js';
+import { renderInventoryTab } from './tabs/inventory.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -68,7 +72,11 @@ const TABS = [
     { key: 'class', label: 'Class', icon: '' },
     { key: 'skills', label: 'Skills', icon: '' },
     { key: 'spells', label: 'Spells', icon: '' },
-    { key: 'traits', label: 'Traits', icon: '' }
+    { key: 'traits', label: 'Traits', icon: '' },
+    { key: 'titles', label: 'Titles', icon: '' },
+    { key: 'modifiers', label: 'Modifiers', icon: '' },
+    { key: 'equipment', label: 'Equipment', icon: '' },
+    { key: 'inventory', label: 'Inventory', icon: '' }
 ];
 
 // Cleanup tracking
@@ -993,6 +1001,558 @@ function openModal(type, data = {}) {
             );
             break;
 
+        // ===== Title Modals =====
+        case 'add-character-title':
+        case 'edit-character-title':
+            titleEl.textContent = type === 'add-character-title' ? 'Add Title' : 'Edit Title';
+            const charTitle = data.title || { name: '', description: '', effects: '', source: '', rarity: 'common' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Title Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_chartitle_name',
+                        value: charTitle.name,
+                        placeholder: 'e.g., Dragon Slayer'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_chartitle_desc',
+                        placeholder: 'Describe how the title was earned...'
+                    }, charTitle.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Rarity'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_chartitle_rarity' },
+                            ['common', 'uncommon', 'rare', 'epic', 'legendary'].map(r =>
+                                h('option', { value: r, selected: charTitle.rarity === r ? 'selected' : null }, r.charAt(0).toUpperCase() + r.slice(1))
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Source'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_chartitle_source',
+                            value: charTitle.source || '',
+                            placeholder: 'e.g., Defeated Alduin'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Effects'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_chartitle_effects',
+                        value: charTitle.effects || '',
+                        placeholder: 'e.g., +10% damage to dragons'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newTitle = {
+                            name: document.getElementById('vmt_chartitle_name').value.trim(),
+                            description: document.getElementById('vmt_chartitle_desc').value.trim(),
+                            rarity: document.getElementById('vmt_chartitle_rarity').value,
+                            source: document.getElementById('vmt_chartitle_source').value.trim(),
+                            effects: document.getElementById('vmt_chartitle_effects').value.trim()
+                        };
+                        if (newTitle.name) {
+                            data.onSave(newTitle);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Modifier Modals =====
+        case 'add-modifier':
+        case 'edit-modifier':
+            titleEl.textContent = type === 'add-modifier' ? 'Add Modifier' : 'Edit Modifier';
+            const modCat = data.category || 'permanent';
+            const modifier = data.modifier || { name: '', effect: '', value: '', source: '', type: 'buff', duration: '', remaining: '', trigger: '' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Modifier Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_mod_name',
+                        value: modifier.name,
+                        placeholder: 'e.g., Blessing of Strength'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Effect'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_mod_effect',
+                            value: modifier.effect || '',
+                            placeholder: 'e.g., +5 STR'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Value'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_mod_value',
+                            value: modifier.value || '',
+                            placeholder: 'e.g., 5'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Type'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_mod_type' },
+                            h('option', { value: 'buff', selected: modifier.type === 'buff' ? 'selected' : null }, 'Buff'),
+                            h('option', { value: 'debuff', selected: modifier.type === 'debuff' ? 'selected' : null }, 'Debuff')
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Source'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_mod_source',
+                            value: modifier.source || '',
+                            placeholder: 'e.g., Holy amulet'
+                        })
+                    )
+                )
+            );
+            if (modCat === 'temporary') {
+                bodyEl.appendChild(
+                    h('div', { class: 'vmt_modal_row' },
+                        h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                            h('label', { class: 'vmt_modal_label' }, 'Duration'),
+                            h('input', {
+                                type: 'text',
+                                class: 'vmt_modal_input',
+                                id: 'vmt_mod_duration',
+                                value: modifier.duration || '',
+                                placeholder: 'e.g., 1 hour'
+                            })
+                        ),
+                        h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                            h('label', { class: 'vmt_modal_label' }, 'Remaining'),
+                            h('input', {
+                                type: 'text',
+                                class: 'vmt_modal_input',
+                                id: 'vmt_mod_remaining',
+                                value: modifier.remaining || '',
+                                placeholder: 'e.g., 30 mins'
+                            })
+                        )
+                    )
+                );
+            }
+            if (modCat === 'conditional') {
+                bodyEl.appendChild(
+                    h('div', { class: 'vmt_modal_field' },
+                        h('label', { class: 'vmt_modal_label' }, 'Trigger Condition'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_mod_trigger',
+                            value: modifier.trigger || '',
+                            placeholder: 'e.g., When HP below 50%'
+                        })
+                    )
+                );
+            }
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newMod = {
+                            name: document.getElementById('vmt_mod_name').value.trim(),
+                            effect: document.getElementById('vmt_mod_effect').value.trim(),
+                            value: document.getElementById('vmt_mod_value').value.trim(),
+                            type: document.getElementById('vmt_mod_type').value,
+                            source: document.getElementById('vmt_mod_source').value.trim()
+                        };
+                        if (modCat === 'temporary') {
+                            newMod.duration = document.getElementById('vmt_mod_duration')?.value.trim() || '';
+                            newMod.remaining = document.getElementById('vmt_mod_remaining')?.value.trim() || '';
+                        }
+                        if (modCat === 'conditional') {
+                            newMod.trigger = document.getElementById('vmt_mod_trigger')?.value.trim() || '';
+                        }
+                        if (newMod.name) {
+                            data.onSave(newMod);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Equipment Modal =====
+        case 'view-equipment':
+            titleEl.textContent = data.slotLabel || 'Equipment Slot';
+            const equippedItem = data.item;
+            if (equippedItem) {
+                bodyEl.appendChild(
+                    h('div', { class: 'vmt_modal_equipment_view' },
+                        h('div', { class: `vmt_modal_item_name vmt_rarity_${equippedItem.rarity || 'common'}` }, equippedItem.name),
+                        equippedItem.description ? h('div', { class: 'vmt_modal_item_desc' }, equippedItem.description) : null,
+                        equippedItem.stats ? h('div', { class: 'vmt_modal_item_stats' },
+                            h('span', { class: 'vmt_stats_label' }, 'Stats: '),
+                            h('span', {}, equippedItem.stats)
+                        ) : null,
+                        h('div', { class: 'vmt_modal_item_meta' },
+                            h('span', { class: 'vmt_item_rarity' }, (equippedItem.rarity || 'common').charAt(0).toUpperCase() + (equippedItem.rarity || 'common').slice(1)),
+                            equippedItem.value ? h('span', { class: 'vmt_item_value' }, `Value: ${equippedItem.value}g`) : null
+                        )
+                    )
+                );
+                footerEl.appendChild(
+                    h('button', {
+                        class: 'vmt_btn vmt_btn_danger',
+                        onclick: () => {
+                            data.onUnequip();
+                            closeModal();
+                        }
+                    }, 'Unequip')
+                );
+            } else {
+                bodyEl.appendChild(h('div', { class: 'vmt_empty' }, 'No item equipped'));
+            }
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Close')
+            );
+            break;
+
+        case 'select-equipment':
+            titleEl.textContent = `Equip to ${data.slotLabel || 'Slot'}`;
+            const equipableItems = data.items || [];
+            const itemListContainer = h('div', { class: 'vmt_modal_item_list' });
+            if (equipableItems.length === 0) {
+                itemListContainer.appendChild(h('div', { class: 'vmt_empty' }, 'No equippable items in inventory'));
+            } else {
+                equipableItems.forEach(item => {
+                    itemListContainer.appendChild(
+                        h('div', {
+                            class: `vmt_modal_item_option vmt_rarity_${item.rarity || 'common'}`,
+                            onclick: () => {
+                                data.onSelect(item);
+                                closeModal();
+                            }
+                        },
+                            h('div', { class: 'vmt_item_option_name' }, item.name),
+                            item.stats ? h('div', { class: 'vmt_item_option_stats' }, item.stats) : null
+                        )
+                    );
+                });
+            }
+            bodyEl.appendChild(itemListContainer);
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Inventory Item Modals =====
+        case 'add-item':
+        case 'edit-item':
+            titleEl.textContent = type === 'add-item' ? 'Add Item' : 'Edit Item';
+            const item = data.item || {
+                name: '', quantity: 1, weight: 0, value: 0, category: 'Misc',
+                description: '', rarity: 'common', equippable: false, slot: '', stats: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Item Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_item_name',
+                        value: item.name,
+                        placeholder: 'e.g., Iron Sword'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_item_desc',
+                        placeholder: 'Describe the item...'
+                    }, item.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Quantity'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_item_qty',
+                            value: item.quantity || 1,
+                            min: 1
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Weight'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_item_weight',
+                            value: item.weight || 0,
+                            min: 0,
+                            step: 0.1
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Value (g)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_item_value',
+                            value: item.value || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Category'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_item_category' },
+                            ['Weapons', 'Armor', 'Consumables', 'Materials', 'Quest Items', 'Misc'].map(cat =>
+                                h('option', { value: cat, selected: item.category === cat ? 'selected' : null }, cat)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Rarity'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_item_rarity' },
+                            ['common', 'uncommon', 'rare', 'epic', 'legendary'].map(r =>
+                                h('option', { value: r, selected: item.rarity === r ? 'selected' : null }, r.charAt(0).toUpperCase() + r.slice(1))
+                            )
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_checkbox_label' },
+                        h('input', {
+                            type: 'checkbox',
+                            id: 'vmt_item_equippable',
+                            checked: item.equippable ? 'checked' : null,
+                            onchange: (e) => {
+                                const slotField = document.getElementById('vmt_item_slot_field');
+                                if (slotField) slotField.style.display = e.target.checked ? 'block' : 'none';
+                            }
+                        }),
+                        h('span', {}, ' Equippable')
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field', id: 'vmt_item_slot_field', style: item.equippable ? '' : 'display: none' },
+                    h('label', { class: 'vmt_modal_label' }, 'Equipment Slot'),
+                    h('select', { class: 'vmt_modal_select', id: 'vmt_item_slot' },
+                        [
+                            { key: '', label: 'Select slot...' },
+                            { key: 'head', label: 'Head' },
+                            { key: 'chest', label: 'Chest' },
+                            { key: 'hands', label: 'Hands' },
+                            { key: 'legs', label: 'Legs' },
+                            { key: 'feet', label: 'Feet' },
+                            { key: 'back', label: 'Back' },
+                            { key: 'mainHand', label: 'Main Hand' },
+                            { key: 'offHand', label: 'Off Hand' },
+                            { key: 'ring1', label: 'Ring' },
+                            { key: 'ring2', label: 'Ring' },
+                            { key: 'amulet', label: 'Amulet' },
+                            { key: 'accessory1', label: 'Accessory' },
+                            { key: 'accessory2', label: 'Accessory' },
+                            { key: 'accessory3', label: 'Accessory' }
+                        ].map(s =>
+                            h('option', { value: s.key, selected: item.slot === s.key ? 'selected' : null }, s.label)
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Stats/Bonuses'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_item_stats',
+                        value: item.stats || '',
+                        placeholder: 'e.g., +5 Attack, +2 STR'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newItem = {
+                            name: document.getElementById('vmt_item_name').value.trim(),
+                            description: document.getElementById('vmt_item_desc').value.trim(),
+                            quantity: parseInt(document.getElementById('vmt_item_qty').value, 10) || 1,
+                            weight: parseFloat(document.getElementById('vmt_item_weight').value) || 0,
+                            value: parseInt(document.getElementById('vmt_item_value').value, 10) || 0,
+                            category: document.getElementById('vmt_item_category').value,
+                            rarity: document.getElementById('vmt_item_rarity').value,
+                            equippable: document.getElementById('vmt_item_equippable').checked,
+                            slot: document.getElementById('vmt_item_slot').value,
+                            stats: document.getElementById('vmt_item_stats').value.trim()
+                        };
+                        if (newItem.name) {
+                            data.onSave(newItem);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        case 'edit-currencies':
+            titleEl.textContent = 'Edit Currencies';
+            const currencies = data.currencies || { gold: 0, silver: 0, copper: 0, custom: [] };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Gold'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_curr_gold',
+                            value: currencies.gold || 0,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Silver'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_curr_silver',
+                            value: currencies.silver || 0,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Copper'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_curr_copper',
+                            value: currencies.copper || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            // Custom currencies section
+            const customList = [...(currencies.custom || [])];
+            const customContainer = h('div', { class: 'vmt_custom_currencies' },
+                h('div', { class: 'vmt_modal_label' }, 'Custom Currencies')
+            );
+            const customListEl = h('div', { class: 'vmt_custom_list' });
+            const renderCustomList = () => {
+                customListEl.innerHTML = '';
+                customList.forEach((cc, i) => {
+                    customListEl.appendChild(
+                        h('div', { class: 'vmt_custom_currency_row' },
+                            h('input', {
+                                type: 'text',
+                                class: 'vmt_modal_input',
+                                value: cc.name,
+                                placeholder: 'Name',
+                                onchange: (e) => { customList[i].name = e.target.value; }
+                            }),
+                            h('input', {
+                                type: 'number',
+                                class: 'vmt_modal_input',
+                                value: cc.amount,
+                                min: 0,
+                                onchange: (e) => { customList[i].amount = parseInt(e.target.value, 10) || 0; }
+                            }),
+                            h('button', {
+                                class: 'vmt_btn_icon vmt_btn_danger',
+                                onclick: () => {
+                                    customList.splice(i, 1);
+                                    renderCustomList();
+                                }
+                            }, '')
+                        )
+                    );
+                });
+            };
+            renderCustomList();
+            customContainer.appendChild(customListEl);
+            customContainer.appendChild(
+                h('button', {
+                    class: 'vmt_btn_small vmt_btn_add',
+                    onclick: () => {
+                        customList.push({ name: '', amount: 0 });
+                        renderCustomList();
+                    }
+                }, '+ Add Currency')
+            );
+            bodyEl.appendChild(customContainer);
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        data.onSave({
+                            gold: parseInt(document.getElementById('vmt_curr_gold').value, 10) || 0,
+                            silver: parseInt(document.getElementById('vmt_curr_silver').value, 10) || 0,
+                            copper: parseInt(document.getElementById('vmt_curr_copper').value, 10) || 0,
+                            custom: customList.filter(c => c.name.trim())
+                        });
+                        closeModal();
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
         default:
             titleEl.textContent = 'Modal';
             bodyEl.textContent = 'Unknown modal type';
@@ -1048,6 +1608,18 @@ function render() {
             break;
         case 'traits':
             body.appendChild(renderTraitsTab(openModal, render));
+            break;
+        case 'titles':
+            body.appendChild(renderTitlesTab(openModal, render));
+            break;
+        case 'modifiers':
+            body.appendChild(renderModifiersTab(openModal, render));
+            break;
+        case 'equipment':
+            body.appendChild(renderEquipmentTab(openModal, render));
+            break;
+        case 'inventory':
+            body.appendChild(renderInventoryTab(openModal, render));
             break;
         default:
             body.textContent = 'Unknown tab';
