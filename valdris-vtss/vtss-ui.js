@@ -14,11 +14,17 @@ export class VTSSUI {
         this.container = null;
         this.isExpanded = true;
         this.isMinimized = false;
-        
+
         // Drag state
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this.position = { x: null, y: null };
+
+        // Bound event handlers for cleanup
+        this._boundMouseMove = null;
+        this._boundMouseUp = null;
+        this._dragSetup = false;
+        this._unsubscribe = null;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -56,44 +62,51 @@ export class VTSSUI {
     setupDrag() {
         const header = this.container.querySelector('.vtss-header');
         if (!header) return;
-        
+
         header.style.cursor = 'grab';
-        
+
+        // Only attach header mousedown listener (this is fine to re-attach on render
+        // since the header element is recreated each time)
         header.addEventListener('mousedown', (e) => {
             if (e.target.closest('button')) return;
-            
+
             this.isDragging = true;
             header.style.cursor = 'grabbing';
             this.container.classList.add('vtss-dragging');
-            
+
             const rect = this.container.getBoundingClientRect();
             this.dragOffset = {
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top
             };
-            
+
             e.preventDefault();
         });
-        
-        document.addEventListener('mousemove', (e) => {
+
+        // Only setup document-level listeners once
+        if (this._dragSetup) return;
+        this._dragSetup = true;
+
+        // Create bound handlers that can be removed later
+        this._boundMouseMove = (e) => {
             if (!this.isDragging) return;
-            
+
             const x = e.clientX - this.dragOffset.x;
             const y = e.clientY - this.dragOffset.y;
-            
+
             // Clamp to viewport
             const maxX = window.innerWidth - this.container.offsetWidth;
             const maxY = window.innerHeight - this.container.offsetHeight;
-            
+
             this.position.x = Math.max(0, Math.min(x, maxX));
             this.position.y = Math.max(0, Math.min(y, maxY));
-            
+
             this.container.style.left = this.position.x + 'px';
             this.container.style.top = this.position.y + 'px';
             this.container.style.right = 'auto';
-        });
-        
-        document.addEventListener('mouseup', () => {
+        };
+
+        this._boundMouseUp = () => {
             if (this.isDragging) {
                 this.isDragging = false;
                 const header = this.container.querySelector('.vtss-header');
@@ -101,7 +114,10 @@ export class VTSSUI {
                 this.container.classList.remove('vtss-dragging');
                 this.savePosition();
             }
-        });
+        };
+
+        document.addEventListener('mousemove', this._boundMouseMove);
+        document.addEventListener('mouseup', this._boundMouseUp);
     }
 
     savePosition() {
@@ -298,7 +314,8 @@ export class VTSSUI {
     }
 
     subscribeToChanges() {
-        this.manager.subscribe('vtss-ui', () => {
+        // Store unsubscribe function for cleanup
+        this._unsubscribe = this.manager.subscribe('vtss-ui', () => {
             this.render();
         });
     }
@@ -348,8 +365,29 @@ export class VTSSUI {
     }
 
     destroy() {
+        // Remove document-level event listeners
+        if (this._boundMouseMove) {
+            document.removeEventListener('mousemove', this._boundMouseMove);
+            this._boundMouseMove = null;
+        }
+        if (this._boundMouseUp) {
+            document.removeEventListener('mouseup', this._boundMouseUp);
+            this._boundMouseUp = null;
+        }
+
+        // Unsubscribe from manager updates
+        if (this._unsubscribe) {
+            this._unsubscribe();
+            this._unsubscribe = null;
+        }
+
+        // Reset drag setup flag
+        this._dragSetup = false;
+
+        // Remove container
         if (this.container) {
             this.container.remove();
+            this.container = null;
         }
     }
 }
