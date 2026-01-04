@@ -172,6 +172,78 @@ export function createEmptyState() {
         // Traits system
         traits: [],  // { id, name, description, source, mechanicalEffect, category: 'innate'|'acquired'|'racial'|'background' }
 
+        // Titles system
+        titles: [],  // { id, name, description, effects, source, rarity: 'common'|'uncommon'|'rare'|'epic'|'legendary' }
+        activeTitleId: null,  // ID of the currently active title
+
+        // Modifiers system
+        modifiers: {
+            permanent: [],  // { id, name, effect, value, source, type: 'buff'|'debuff' }
+            temporary: [],  // { id, name, effect, value, source, type: 'buff'|'debuff', duration, remaining }
+            conditional: []  // { id, name, effect, value, source, type: 'buff'|'debuff', trigger }
+        },
+
+        // Resistances (percentages)
+        resistances: {
+            fire: 0,
+            ice: 0,
+            lightning: 0,
+            poison: 0,
+            holy: 0,
+            shadow: 0,
+            physical: 0,
+            arcane: 0
+        },
+
+        // Status immunities
+        immunities: {
+            poison: false,
+            paralysis: false,
+            sleep: false,
+            fear: false,
+            charm: false,
+            stun: false,
+            bleed: false,
+            burn: false,
+            freeze: false,
+            blind: false
+        },
+
+        // Equipment system
+        equipment: {
+            head: null,
+            chest: null,
+            hands: null,
+            legs: null,
+            feet: null,
+            back: null,
+            mainHand: null,
+            offHand: null,
+            ring1: null,
+            ring2: null,
+            amulet: null,
+            accessory1: null,
+            accessory2: null,
+            accessory3: null
+        },
+
+        // Inventory system
+        inventory: [],  // { id, name, quantity, weight, value, category, description, rarity, equippable, slot, stats }
+
+        // Currencies
+        currencies: {
+            gold: 0,
+            silver: 0,
+            copper: 0,
+            custom: []  // { name, amount }
+        },
+
+        // Weight capacity
+        weightCapacity: { current: 0, max: 100 },
+
+        // Inventory view preference
+        inventoryView: 'grid',  // 'grid' or 'list'
+
         // UI state
         panelCollapsed: false
     };
