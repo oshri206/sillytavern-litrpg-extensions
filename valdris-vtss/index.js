@@ -33,7 +33,11 @@ const extensionState = {
     showNotifications: true,
     panelPosition: 'right', // 'right', 'left', 'float'
     debugMode: false
-  }
+  },
+  // Cleanup references
+  _autoSaveIntervalId: null,
+  _boundBeforeUnload: null,
+  _journeyUnsubscribers: []
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -202,11 +206,49 @@ function setupAutoSave() {
     saveState();
   });
 
-  // Save periodically
-  setInterval(saveState, 60000); // Every minute
+  // Save periodically - store interval ID for cleanup
+  if (extensionState._autoSaveIntervalId) {
+    clearInterval(extensionState._autoSaveIntervalId);
+  }
+  extensionState._autoSaveIntervalId = setInterval(saveState, 60000); // Every minute
 
-  // Save on page unload
-  window.addEventListener('beforeunload', saveState);
+  // Save on page unload - store reference for cleanup
+  if (extensionState._boundBeforeUnload) {
+    window.removeEventListener('beforeunload', extensionState._boundBeforeUnload);
+  }
+  extensionState._boundBeforeUnload = saveState;
+  window.addEventListener('beforeunload', extensionState._boundBeforeUnload);
+}
+
+/**
+ * Cleanup function for extension unload
+ */
+function cleanup() {
+  // Clear auto-save interval
+  if (extensionState._autoSaveIntervalId) {
+    clearInterval(extensionState._autoSaveIntervalId);
+    extensionState._autoSaveIntervalId = null;
+  }
+
+  // Remove beforeunload listener
+  if (extensionState._boundBeforeUnload) {
+    window.removeEventListener('beforeunload', extensionState._boundBeforeUnload);
+    extensionState._boundBeforeUnload = null;
+  }
+
+  // Unsubscribe from Journey events
+  extensionState._journeyUnsubscribers.forEach(unsub => {
+    if (typeof unsub === 'function') unsub();
+  });
+  extensionState._journeyUnsubscribers = [];
+
+  // Cleanup UI
+  if (extensionState.ui) {
+    extensionState.ui.destroy();
+  }
+
+  extensionState.initialized = false;
+  console.log('[VTSS] Cleanup complete');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -395,11 +437,11 @@ function subscribeToJourney() {
     setTimeout(subscribeToJourney, 1000);
     return;
   }
-  
+
   // Subscribe to time of day changes detected in narrative
-  window.VJourney.subscribe(window.VJourney.EVENTS.TIME_CHANGED, (data) => {
+  const unsubTime = window.VJourney.subscribe(window.VJourney.EVENTS.TIME_CHANGED, (data) => {
     console.log('[VTSS] Time of day detected via Journey:', data.timeOfDay);
-    
+
     // Map journey time detection to hours
     const timeMap = {
       dawn: 6,
@@ -409,7 +451,7 @@ function subscribeToJourney() {
       dusk: 18,
       night: 22,
     };
-    
+
     if (data.timeOfDay && timeMap[data.timeOfDay] !== undefined) {
       const currentState = vtssManager.state;
       if (currentState?.time) {
@@ -429,9 +471,9 @@ function subscribeToJourney() {
       }
     }
   });
-  
+
   // Subscribe to location changes - sync location name
-  window.VJourney.subscribe(window.VJourney.EVENTS.LOCATION_CHANGED, (data) => {
+  const unsubLocation = window.VJourney.subscribe(window.VJourney.EVENTS.LOCATION_CHANGED, (data) => {
     if (data.location) {
       const locationName = data.location.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       vtssManager.setLocation({
@@ -442,7 +484,11 @@ function subscribeToJourney() {
       console.log('[VTSS] Location synced from Journey:', locationName);
     }
   });
-  
+
+  // Store unsubscribe functions for cleanup
+  if (unsubTime) extensionState._journeyUnsubscribers.push(unsubTime);
+  if (unsubLocation) extensionState._journeyUnsubscribers.push(unsubLocation);
+
   console.log('[VTSS] Subscribed to Journey Tracker!');
 }
 
@@ -458,25 +504,28 @@ window.VTSS = {
   manager: vtssManager,
   calendar: ValdrisCalendar,
   parser: VTSSParser,
-  
+
   // Convenience methods
   getCurrentDate: () => vtssManager.getFormattedDate(),
   getCurrentLocation: () => vtssManager.currentLocation,
   getState: () => vtssManager.state,
-  
+
   // Subscribe to changes (for Diplomacy extension etc)
   subscribe: (callback, options) => vtssManager.subscribe(callback, options),
-  
+
   // Manual state updates
   setTime: (year, month, day, hour) => vtssManager.setTime(year, month, day, hour),
   setLocation: (locationData) => vtssManager.setLocation(locationData),
   advanceTime: (amount, unit) => vtssManager.applyTimeSkip({ amount, unit }),
-  
+
   // Calendar utilities
   formatDate: (day, month, year, style) => ValdrisCalendar.formatDate(day, month, year, style),
   getMonth: (identifier) => ValdrisCalendar.getMonth(identifier),
   getMoonPhase: (day) => ValdrisCalendar.getMoonPhase(day),
-  getHolidays: (day, month) => ValdrisCalendar.getHolidays(day, month)
+  getHolidays: (day, month) => ValdrisCalendar.getHolidays(day, month),
+
+  // Cleanup (for extension unload)
+  cleanup: cleanup
 };
 
 // Also export as ES modules for modern imports
@@ -488,7 +537,8 @@ export {
   VTSSUI,
   vtssUI,
   createDefaultState,
-  validateState
+  validateState,
+  cleanup
 };
 
 export default extensionState;
