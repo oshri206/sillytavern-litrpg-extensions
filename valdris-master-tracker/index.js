@@ -38,6 +38,17 @@ import { renderTransformationsTab } from './tabs/transformations.js';
 import { renderBountiesTab } from './tabs/bounties.js';
 import { renderLegacyTab } from './tabs/legacy.js';
 import { renderSurvivalMetersTab } from './tabs/survival-meters.js';
+import { renderBlessingsTab } from './tabs/blessings.js';
+import { renderMasteriesTab } from './tabs/masteries.js';
+import { renderKarmaTab } from './tabs/karma.js';
+import { renderLimitationsTab } from './tabs/limitations.js';
+import { renderCollectionsTab } from './tabs/collections.js';
+import { renderGuildsTab } from './tabs/guilds.js';
+import { renderDungeonsTab } from './tabs/dungeons.js';
+import { renderTalentsTab } from './tabs/talents.js';
+import { renderLoadoutsTab } from './tabs/loadouts.js';
+import { renderSettingsTab } from './tabs/settings.js';
+import { buildContextBlock } from './context.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -96,7 +107,17 @@ const TABS = [
     { key: 'transformations', label: 'Forms', icon: '' },
     { key: 'bounties', label: 'Bounties', icon: '' },
     { key: 'legacy', label: 'Legacy', icon: '' },
-    { key: 'survival', label: 'Survival', icon: '' }
+    { key: 'survival', label: 'Survival', icon: '' },
+    { key: 'blessings', label: 'Blessings', icon: '' },
+    { key: 'masteries', label: 'Masteries', icon: '' },
+    { key: 'karma', label: 'Karma', icon: '' },
+    { key: 'limitations', label: 'Limitations', icon: '' },
+    { key: 'collections', label: 'Collections', icon: '' },
+    { key: 'guilds', label: 'Guilds', icon: '' },
+    { key: 'dungeons', label: 'Dungeons', icon: '' },
+    { key: 'talents', label: 'Talents', icon: '' },
+    { key: 'loadouts', label: 'Loadouts', icon: '' },
+    { key: 'settings', label: 'Settings', icon: '' }
 ];
 
 // Cleanup tracking
@@ -583,6 +604,16 @@ function openModal(type, data = {}) {
             );
             footerEl.appendChild(
                 h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        case 'context-preview':
+            titleEl.textContent = 'Context Injection Preview';
+            bodyEl.appendChild(
+                h('pre', { class: 'vmt_modal_preview' }, data.preview || '')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Close')
             );
             break;
 
@@ -3208,9 +3239,374 @@ function render() {
         case 'survival':
             body.appendChild(renderSurvivalMetersTab(openModal, render));
             break;
+        case 'blessings':
+            body.appendChild(renderBlessingsTab(openModal, render));
+            break;
+        case 'masteries':
+            body.appendChild(renderMasteriesTab(openModal, render));
+            break;
+        case 'karma':
+            body.appendChild(renderKarmaTab(openModal, render));
+            break;
+        case 'limitations':
+            body.appendChild(renderLimitationsTab(openModal, render));
+            break;
+        case 'collections':
+            body.appendChild(renderCollectionsTab(openModal, render));
+            break;
+        case 'guilds':
+            body.appendChild(renderGuildsTab(openModal, render));
+            break;
+        case 'dungeons':
+            body.appendChild(renderDungeonsTab(openModal, render));
+            break;
+        case 'talents':
+            body.appendChild(renderTalentsTab(openModal, render));
+            break;
+        case 'loadouts':
+            body.appendChild(renderLoadoutsTab(openModal, render));
+            break;
+        case 'settings':
+            body.appendChild(renderSettingsTab(openModal, render));
+            break;
         default:
             body.textContent = 'Unknown tab';
     }
+}
+
+// ===== Context Injection & Auto-Parsing =====
+const AUTO_PARSE_PATTERNS = {
+    damage: /(?:takes?|receives?|suffers?)\s+(\d+)\s+(?:points?\s+of\s+)?damage/gi,
+    healing: /(?:heals?|recovers?|restores?)\s+(\d+)\s+(?:HP|health|hit\s+points?)/gi,
+    manaUse: /(?:spends?|uses?|costs?)\s+(\d+)\s+(?:MP|mana|magic)/gi,
+    manaRestore: /(?:recovers?|restores?|regains?)\s+(\d+)\s+(?:MP|mana)/gi,
+    xpGain: /(?:gains?|earns?|receives?)\s+(\d+)\s+(?:XP|experience)/gi,
+    levelUp: /(?:levels?\s+up|reached?\s+level|now\s+level)\s+(\d+)/gi,
+    goldGain: /(?:gains?|finds?|receives?|loots?)\s+(\d+)\s+gold/gi,
+    goldLoss: /(?:spends?|pays?|loses?)\s+(\d+)\s+gold/gi,
+    itemGain: /(?:obtains?|receives?|finds?|picks?\s+up)\s+(?:a\s+|the\s+)?([A-Z][^.!?]+?)(?:\\.|!|\\?|$)/gi,
+    statusGain: /(?:is\\s+now|becomes?|gains?\\s+the\\s+status)\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+)?)/gi
+};
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function getValueByPath(obj, path) {
+    return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+}
+
+function showToast(message, { actionLabel, onAction, duration = 5000 } = {}) {
+    if (!message) return;
+    const toast = h('div', { class: 'vmt-toast' },
+        h('span', { class: 'vmt-toast-message' }, message)
+    );
+
+    if (actionLabel && typeof onAction === 'function') {
+        toast.appendChild(
+            h('button', { class: 'vmt-toast-undo', onclick: () => {
+                onAction();
+                toast.remove();
+            } }, actionLabel)
+        );
+    }
+
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), duration);
+}
+
+async function logParseHistory(description, applied) {
+    const state = getState();
+    const history = [{ timestamp: Date.now(), description, applied }, ...(state.settings?.parseHistory || [])].slice(0, 100);
+    await updateField('settings.parseHistory', history);
+}
+
+function getMessageContent(messageRef) {
+    const ctx = getContext?.();
+    if (typeof messageRef === 'object') {
+        const msg = messageRef.message || messageRef;
+        return msg?.mes ?? msg?.content ?? msg?.text ?? '';
+    }
+    if (typeof messageRef === 'number' && ctx?.chat?.length) {
+        const msg = ctx.chat[messageRef];
+        return msg?.mes ?? msg?.content ?? msg?.text ?? '';
+    }
+    return '';
+}
+
+function addInventoryItem(name) {
+    const state = getState();
+    const inventory = [...(state.inventory || [])];
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+    inventory.push({ id, name, quantity: 1, weight: 0, value: 0, category: 'Misc', description: '', rarity: 'Common', equippable: false, slot: '', stats: '' });
+    updateField('inventory', inventory);
+    return { id, inventory };
+}
+
+function queueChange(change, settings) {
+    if (!change) return;
+    const { description, apply, undo } = change;
+    if (settings.autoApply) {
+        apply();
+        logParseHistory(description, true);
+        if (settings.showToasts) {
+            showToast(description, {
+                actionLabel: 'Undo',
+                onAction: undo,
+                duration: (settings.undoWindow || 5) * 1000
+            });
+        }
+    } else if (settings.showToasts) {
+        showToast(description, {
+            actionLabel: 'Apply',
+            onAction: () => {
+                apply();
+                logParseHistory(description, true);
+                showToast(description, {
+                    actionLabel: 'Undo',
+                    onAction: undo,
+                    duration: (settings.undoWindow || 5) * 1000
+                });
+            },
+            duration: (settings.undoWindow || 5) * 1000
+        });
+        logParseHistory(description, false);
+    }
+}
+
+function parseMessageForChanges(text) {
+    const state = getState();
+    const settings = state.settings?.autoParsing;
+    if (!settings?.enabled || !text) return;
+
+    const categories = settings.parseCategories || {};
+
+    if (categories.damage !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.damage)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Damage detected: -${amount} HP`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.hp.current;
+                    const next = clamp(prevValue - amount, 0, current.hp.max);
+                    updateField('hp.current', next);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('hp.current', prevValue);
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.healing !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.healing)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Healing detected: +${amount} HP`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.hp.current;
+                    const next = clamp(prevValue + amount, 0, current.hp.max);
+                    updateField('hp.current', next);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('hp.current', prevValue);
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.mana !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.manaUse)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Mana spent: -${amount} MP`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.mp.current;
+                    updateField('mp.current', clamp(prevValue - amount, 0, current.mp.max));
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('mp.current', prevValue);
+                }
+            }, settings);
+        }
+
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.manaRestore)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Mana restored: +${amount} MP`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.mp.current;
+                    updateField('mp.current', clamp(prevValue + amount, 0, current.mp.max));
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('mp.current', prevValue);
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.xp !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.xpGain)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Experience gained: +${amount} XP`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.xp.current || 0;
+                    updateField('xp.current', prevValue + amount);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('xp.current', prevValue);
+                }
+            }, settings);
+        }
+
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.levelUp)) {
+            const level = Number(match[1] || 1);
+            let prevValue = null;
+            queueChange({
+                description: `Level up detected: Level ${level}`,
+                apply: () => {
+                    prevValue = getState().level;
+                    updateField('level', level);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('level', prevValue);
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.gold !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.goldGain)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Gold gained: +${amount}`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.currencies?.gold || 0;
+                    updateField('currencies.gold', prevValue + amount);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('currencies.gold', prevValue);
+                }
+            }, settings);
+        }
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.goldLoss)) {
+            const amount = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Gold spent: -${amount}`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = current.currencies?.gold || 0;
+                    updateField('currencies.gold', Math.max(0, prevValue - amount));
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField('currencies.gold', prevValue);
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.items !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.itemGain)) {
+            const name = match[1]?.trim();
+            if (!name) continue;
+            let addedId = null;
+            queueChange({
+                description: `Item acquired: ${name}`,
+                apply: () => {
+                    const result = addInventoryItem(name);
+                    addedId = result.id;
+                },
+                undo: () => {
+                    if (!addedId) return;
+                    const current = getState();
+                    const inventory = [...(current.inventory || [])];
+                    const index = inventory.findIndex(item => item.id === addedId);
+                    if (index >= 0) {
+                        inventory.splice(index, 1);
+                        updateField('inventory', inventory);
+                    }
+                }
+            }, settings);
+        }
+    }
+
+    if (categories.status !== false) {
+        for (const match of text.matchAll(AUTO_PARSE_PATTERNS.statusGain)) {
+            const status = match[1]?.trim();
+            if (!status) continue;
+            let addedIndex = null;
+            queueChange({
+                description: `Status gained: ${status}`,
+                apply: () => {
+                    const current = getState();
+                    const buffs = [...(current.buffs || [])];
+                    addedIndex = buffs.length;
+                    buffs.push({ name: status, effect: '', duration: '' });
+                    updateField('buffs', buffs);
+                },
+                undo: () => {
+                    if (addedIndex === null) return;
+                    const current = getState();
+                    const buffs = [...(current.buffs || [])];
+                    buffs.splice(addedIndex, 1);
+                    updateField('buffs', buffs);
+                }
+            }, settings);
+        }
+    }
+
+    const customPatterns = settings.customPatterns || [];
+    customPatterns.forEach(pattern => {
+        if (pattern.enabled === false || !pattern.pattern || !pattern.field) return;
+        let regex;
+        try {
+            regex = new RegExp(pattern.pattern, 'gi');
+        } catch {
+            return;
+        }
+        for (const match of text.matchAll(regex)) {
+            const value = Number(match[1] || 0);
+            let prevValue = null;
+            queueChange({
+                description: `Custom pattern: ${pattern.name || pattern.field}`,
+                apply: () => {
+                    const current = getState();
+                    prevValue = Number(getValueByPath(current, pattern.field) || 0);
+                    let next = prevValue;
+                    if (pattern.operation === 'set') next = value;
+                    if (pattern.operation === 'subtract') next = prevValue - value;
+                    if (!pattern.operation || pattern.operation === 'add') next = prevValue + value;
+                    updateField(pattern.field, next);
+                },
+                undo: () => {
+                    if (prevValue === null) return;
+                    updateField(pattern.field, prevValue);
+                }
+            }, settings);
+        }
+    });
 }
 
 /**
@@ -3226,6 +3622,40 @@ function registerEvents() {
     eventSource.on(event_types.CHAT_CHANGED, () => {
         console.log('[VMasterTracker] Chat changed, re-rendering');
         render();
+    });
+
+    eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (data) => {
+        if (!data) return;
+        const state = getState();
+        const settings = state.settings?.contextInjection;
+        if (!settings?.enabled) return;
+        const contextBlock = buildContextBlock(state, settings);
+        const position = settings.position || 'authorNote';
+        const targets = {
+            authorNote: ['authorNote', 'author_note', 'authorsNote', 'authorNoteText'],
+            systemPrompt: ['systemPrompt', 'system_prompt', 'systemPromptText'],
+            worldInfo: ['worldInfo', 'world_info', 'worldInfoText']
+        };
+        const keys = targets[position] || targets.authorNote;
+        let injected = false;
+        keys.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                data[key] = data[key] ? `${data[key]}\n\n${contextBlock}` : contextBlock;
+                injected = true;
+            }
+        });
+        if (!injected && data?.prompts) {
+            data.prompts[position] = data.prompts[position]
+                ? `${data.prompts[position]}\n\n${contextBlock}`
+                : contextBlock;
+        }
+    });
+
+    eventSource.on(event_types.MESSAGE_RECEIVED, (messageRef) => {
+        const state = getState();
+        if (!state.settings?.autoParsing?.enabled) return;
+        const content = getMessageContent(messageRef);
+        parseMessageForChanges(content);
     });
 
     console.log('[VMasterTracker] Events registered');

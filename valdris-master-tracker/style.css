@@ -5635,3 +5635,138 @@
 .vmt_modal_field_third {
     flex: 0 0 calc(33.33% - 8px);
 }
+
+/* ===== Phase 7-9 Additions ===== */
+/* Karma Meter */
+.vmt-karma-bar {
+    height: 24px;
+    background: linear-gradient(90deg, #7f1d1d, #991b1b, #b91c1c, #6b7280, #2563eb, #1d4ed8, #1e3a8a);
+    border-radius: 4px;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.vmt-karma-indicator {
+    position: absolute;
+    width: 4px;
+    height: 32px;
+    background: white;
+    top: -4px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+/* Blessing vs Curse styling */
+.vmt_blessing { border-left: 3px solid #fbbf24; }
+.vmt_curse { border-left: 3px solid #a855f7; }
+.vmt_mixed { border-left: 3px solid #a855f7; box-shadow: inset 3px 0 0 #fbbf24; }
+
+/* Mastery ranks */
+.vmt-rank-novice { color: #9ca3af; }
+.vmt-rank-apprentice { color: #22c55e; }
+.vmt-rank-journeyman { color: #3b82f6; }
+.vmt-rank-expert { color: #a855f7; }
+.vmt-rank-master { color: #f59e0b; }
+.vmt-rank-grandmaster { color: #ef4444; }
+.vmt-rank-legendary { color: #ec4899; text-shadow: 0 0 8px #ec4899; }
+
+.vmt_mastery_progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.vmt_mastery_progress_label {
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+}
+
+/* Collection grid */
+.vmt_collection_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.vmt_collection_item {
+    background: var(--vmt-bg-input);
+    border: 1px solid var(--vmt-border-subtle);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vmt_collection_item.found { opacity: 1; }
+.vmt_collection_item.unfound { opacity: 0.4; filter: grayscale(1); }
+
+/* Dungeon difficulty colors */
+.vmt-diff-f { color: #9ca3af; }
+.vmt-diff-e { color: #22c55e; }
+.vmt-diff-d { color: #3b82f6; }
+.vmt-diff-c { color: #a855f7; }
+.vmt-diff-b { color: #f59e0b; }
+.vmt-diff-a { color: #ef4444; }
+.vmt-diff-s { color: #ec4899; text-shadow: 0 0 4px #ec4899; }
+.vmt-diff-ss { color: #f472b6; text-shadow: 0 0 8px #f472b6; }
+.vmt-diff-sss { color: #fbbf24; text-shadow: 0 0 12px #fbbf24; animation: pulse 2s infinite; }
+
+/* Toast notifications */
+.vmt-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt-toast-undo {
+    margin-left: auto;
+    color: #3b82f6;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 12px;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Additional layouts */
+.vmt_limitation_card summary {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.vmt_limitation_active {
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+}
+
+.vmt_boss_list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vmt_modal_preview {
+    white-space: pre-wrap;
+    font-family: 'SFMono-Regular', Menlo, monospace;
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+}
