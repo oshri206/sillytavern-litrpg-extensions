@@ -36,6 +36,8 @@ import { renderContractsTab } from './tabs/contracts.js';
 import { renderPropertiesTab } from './tabs/properties.js';
 import { renderTransformationsTab } from './tabs/transformations.js';
 import { renderBountiesTab } from './tabs/bounties.js';
+import { renderLegacyTab } from './tabs/legacy.js';
+import { renderSurvivalMetersTab } from './tabs/survival-meters.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -92,7 +94,9 @@ const TABS = [
     { key: 'contracts', label: 'Contracts', icon: '' },
     { key: 'properties', label: 'Properties', icon: '' },
     { key: 'transformations', label: 'Forms', icon: '' },
-    { key: 'bounties', label: 'Bounties', icon: '' }
+    { key: 'bounties', label: 'Bounties', icon: '' },
+    { key: 'legacy', label: 'Legacy', icon: '' },
+    { key: 'survival', label: 'Survival', icon: '' }
 ];
 
 // Cleanup tracking
@@ -2578,6 +2582,534 @@ function openModal(type, data = {}) {
             );
             break;
 
+        // ===== LEGACY MODALS =====
+        case 'add-bloodline-trait':
+            titleEl.textContent = 'Add Bloodline Trait';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Inherited Trait'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_bloodline_trait',
+                        placeholder: 'e.g., Dragon Blood, Night Vision'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const trait = document.getElementById('vmt_bloodline_trait').value.trim();
+                        if (trait) {
+                            const state = getState();
+                            const traits = [...((state.legacy?.bloodline?.traits) || []), trait];
+                            updateField('legacy.bloodline.traits', traits);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-bloodline-curse':
+            titleEl.textContent = 'Add Bloodline Curse';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Curse Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_bloodline_curse',
+                        placeholder: 'e.g., Blood Madness, Sunlight Weakness'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const curse = document.getElementById('vmt_bloodline_curse').value.trim();
+                        if (curse) {
+                            const state = getState();
+                            const curses = [...((state.legacy?.bloodline?.curses) || []), curse];
+                            updateField('legacy.bloodline.curses', curses);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-bloodline-blessing':
+            titleEl.textContent = 'Add Bloodline Blessing';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Blessing Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_bloodline_blessing',
+                        placeholder: 'e.g., Divine Favor, Ancestral Protection'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const blessing = document.getElementById('vmt_bloodline_blessing').value.trim();
+                        if (blessing) {
+                            const state = getState();
+                            const blessings = [...((state.legacy?.bloodline?.blessings) || []), blessing];
+                            updateField('legacy.bloodline.blessings', blessings);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-ancestor':
+        case 'edit-ancestor':
+            titleEl.textContent = type === 'add-ancestor' ? 'Add Ancestor' : 'Edit Ancestor';
+            const ancestor = data.ancestor || { name: '', relation: '', notes: '' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Name'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_ancestor_name',
+                            value: ancestor.name,
+                            placeholder: 'Ancestor name'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Relation'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_ancestor_relation',
+                            value: ancestor.relation,
+                            placeholder: 'e.g., Great-grandfather'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_ancestor_notes',
+                        placeholder: 'Notable deeds or history...'
+                    }, ancestor.notes || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newAncestor = {
+                            name: document.getElementById('vmt_ancestor_name').value.trim(),
+                            relation: document.getElementById('vmt_ancestor_relation').value.trim(),
+                            notes: document.getElementById('vmt_ancestor_notes').value.trim()
+                        };
+                        if (newAncestor.name) {
+                            data.onSave(newAncestor);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-heir':
+        case 'edit-heir':
+            titleEl.textContent = type === 'add-heir' ? 'Add Heir' : 'Edit Heir';
+            const heir = data.heir || { name: '', relation: '', age: '', status: 'Alive', notes: '' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Name'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_heir_name',
+                            value: heir.name,
+                            placeholder: 'Heir name'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Relation'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_heir_relation',
+                            value: heir.relation,
+                            placeholder: 'e.g., Son, Daughter'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Age'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_heir_age',
+                            value: heir.age || '',
+                            placeholder: 'e.g., 12'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Status'),
+                        h('select', {
+                            class: 'vmt_modal_select',
+                            id: 'vmt_heir_status'
+                        },
+                            ['Alive', 'Deceased', 'Missing', 'Estranged'].map(s =>
+                                h('option', { value: s, selected: heir.status === s }, s)
+                            )
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_heir_notes',
+                        placeholder: 'Additional notes...'
+                    }, heir.notes || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newHeir = {
+                            name: document.getElementById('vmt_heir_name').value.trim(),
+                            relation: document.getElementById('vmt_heir_relation').value.trim(),
+                            age: document.getElementById('vmt_heir_age').value.trim(),
+                            status: document.getElementById('vmt_heir_status').value,
+                            notes: document.getElementById('vmt_heir_notes').value.trim()
+                        };
+                        if (newHeir.name) {
+                            data.onSave(newHeir);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-deed':
+        case 'edit-deed':
+            titleEl.textContent = type === 'add-deed' ? 'Add Legacy Deed' : 'Edit Legacy Deed';
+            const deed = data.deed || { name: '', description: '', date: '', impact: 'Local' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Deed Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_deed_name',
+                        value: deed.name,
+                        placeholder: 'e.g., Slayed the Dragon of Ashmore'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Date'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_deed_date',
+                            value: deed.date || '',
+                            placeholder: 'e.g., Year 1042'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Impact'),
+                        h('select', {
+                            class: 'vmt_modal_select',
+                            id: 'vmt_deed_impact'
+                        },
+                            ['Local', 'Regional', 'National', 'Continental', 'World'].map(s =>
+                                h('option', { value: s, selected: deed.impact === s }, s)
+                            )
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_deed_description',
+                        placeholder: 'What happened and why it mattered...'
+                    }, deed.description || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newDeed = {
+                            name: document.getElementById('vmt_deed_name').value.trim(),
+                            date: document.getElementById('vmt_deed_date').value.trim(),
+                            impact: document.getElementById('vmt_deed_impact').value,
+                            description: document.getElementById('vmt_deed_description').value.trim()
+                        };
+                        if (newDeed.name) {
+                            data.onSave(newDeed);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-inheritance':
+        case 'edit-inheritance':
+            titleEl.textContent = type === 'add-inheritance' ? 'Add Inheritance Item' : 'Edit Inheritance Item';
+            const inheritItem = data.inheritItem || { item: '', recipient: '', conditions: '' };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Item'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_inherit_item',
+                            value: inheritItem.item,
+                            placeholder: 'Item to inherit'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Recipient'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_inherit_recipient',
+                            value: inheritItem.recipient,
+                            placeholder: 'Who receives it'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Conditions (optional)'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_inherit_conditions',
+                        value: inheritItem.conditions || '',
+                        placeholder: 'e.g., Upon reaching adulthood'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newItem = {
+                            item: document.getElementById('vmt_inherit_item').value.trim(),
+                            recipient: document.getElementById('vmt_inherit_recipient').value.trim(),
+                            conditions: document.getElementById('vmt_inherit_conditions').value.trim()
+                        };
+                        if (newItem.item && newItem.recipient) {
+                            data.onSave(newItem);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-house-ally':
+            titleEl.textContent = 'Add Allied House';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'House Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_house_ally',
+                        placeholder: 'e.g., House Brightwater'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const ally = document.getElementById('vmt_house_ally').value.trim();
+                        if (ally) {
+                            const state = getState();
+                            const allies = [...((state.legacy?.house?.allies) || []), ally];
+                            updateField('legacy.house.allies', allies);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        case 'add-house-enemy':
+            titleEl.textContent = 'Add Rival House';
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'House Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_house_enemy',
+                        placeholder: 'e.g., House Darkmore'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const enemy = document.getElementById('vmt_house_enemy').value.trim();
+                        if (enemy) {
+                            const state = getState();
+                            const enemies = [...((state.legacy?.house?.enemies) || []), enemy];
+                            updateField('legacy.house.enemies', enemies);
+                            closeModal();
+                        }
+                    }
+                }, 'Add')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
+        // ===== SURVIVAL METERS MODALS =====
+        case 'add-custom-meter':
+        case 'edit-custom-meter':
+            titleEl.textContent = type === 'add-custom-meter' ? 'Add Custom Meter' : 'Edit Custom Meter';
+            const customMeter = data.meter || {
+                name: '', current: 100, max: 100, color: '#b380ff',
+                criticalThreshold: 20, description: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Meter Name'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_meter_name',
+                            value: customMeter.name,
+                            placeholder: 'e.g., Mana Corruption'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Bar Color'),
+                        h('input', {
+                            type: 'color',
+                            class: 'vmt_modal_input vmt_color_input',
+                            id: 'vmt_meter_color',
+                            value: customMeter.color || '#b380ff'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Current'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_meter_current',
+                            value: customMeter.current,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Max'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_meter_max',
+                            value: customMeter.max,
+                            min: 1
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Critical %'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_meter_critical',
+                            value: customMeter.criticalThreshold,
+                            min: 0,
+                            max: 100
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_meter_description',
+                        placeholder: 'What does this meter represent?'
+                    }, customMeter.description || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const newMeter = {
+                            id: customMeter.id || (Date.now().toString(36) + Math.random().toString(36).substr(2, 9)),
+                            name: document.getElementById('vmt_meter_name').value.trim(),
+                            current: parseInt(document.getElementById('vmt_meter_current').value, 10) || 100,
+                            max: parseInt(document.getElementById('vmt_meter_max').value, 10) || 100,
+                            color: document.getElementById('vmt_meter_color').value,
+                            criticalThreshold: parseInt(document.getElementById('vmt_meter_critical').value, 10) || 20,
+                            description: document.getElementById('vmt_meter_description').value.trim()
+                        };
+                        if (newMeter.name) {
+                            const state = getState();
+                            const custom = [...((state.survivalMeters?.custom) || [])];
+                            if (type === 'edit-custom-meter' && data.index !== undefined) {
+                                custom[data.index] = newMeter;
+                            } else {
+                                custom.push(newMeter);
+                            }
+                            updateField('survivalMeters.custom', custom);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel'));
+            break;
+
         default:
             titleEl.textContent = 'Modal';
             bodyEl.textContent = 'Unknown modal type';
@@ -2669,6 +3201,12 @@ function render() {
             break;
         case 'bounties':
             body.appendChild(renderBountiesTab(openModal, render));
+            break;
+        case 'legacy':
+            body.appendChild(renderLegacyTab(openModal, render));
+            break;
+        case 'survival':
+            body.appendChild(renderSurvivalMetersTab(openModal, render));
             break;
         default:
             body.textContent = 'Unknown tab';
