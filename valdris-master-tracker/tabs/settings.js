@@ -25,6 +25,13 @@ function h(tag, attrs = {}, ...children) {
     return el;
 }
 
+function parsePinnedList(value) {
+    return String(value || '')
+        .split(/\r?\n|,/)
+        .map(entry => entry.trim())
+        .filter(Boolean);
+}
+
 const CATEGORY_LABELS = {
     damage: 'Damage',
     healing: 'Healing',
@@ -40,6 +47,7 @@ export function renderSettingsTab(openModal) {
     const settings = state.settings || {};
     const contextSettings = settings.contextInjection || {};
     const autoSettings = settings.autoParsing || {};
+    const npcSettings = settings.npcLives || {};
 
     const container = h('div', { class: 'vmt_tab_content' });
 
@@ -285,6 +293,38 @@ export function renderSettingsTab(openModal) {
         }, 'Clear History')
     );
 
+    const npcSection = h('div', { class: 'vmt_card' },
+        h('div', { class: 'vmt_section_title' }, 'Important NPC Lives'),
+        h('label', { class: 'vmt_checkbox' },
+            h('input', {
+                type: 'checkbox',
+                checked: npcSettings.enabled || false,
+                onchange: (e) => updateField('settings.npcLives.enabled', e.target.checked)
+            }),
+            h('span', {}, 'Enable NPC Lives Injection')
+        ),
+        h('div', { class: 'vmt_field_grid' },
+            h('div', { class: 'vmt_field' },
+                h('label', { class: 'vmt_label' }, 'Max Characters'),
+                h('input', {
+                    class: 'vmt_input',
+                    type: 'number',
+                    min: 200,
+                    value: npcSettings.maxChars ?? 1200,
+                    onchange: (e) => updateField('settings.npcLives.maxChars', Number(e.target.value || 1200))
+                })
+            )
+        ),
+        h('div', { class: 'vmt_field' },
+            h('label', { class: 'vmt_label' }, 'Pinned NPCs (one per line)'),
+            h('textarea', {
+                class: 'vmt_textarea',
+                rows: 4,
+                onchange: (e) => updateField('settings.npcLives.pinnedNpcs', parsePinnedList(e.target.value))
+            }, (npcSettings.pinnedNpcs || []).join('\n'))
+        )
+    );
+
     const generalSection = h('div', { class: 'vmt_card' },
         h('div', { class: 'vmt_section_title' }, 'General Settings'),
         h('div', { class: 'vmt_field' },
@@ -327,6 +367,6 @@ export function renderSettingsTab(openModal) {
         )
     );
 
-    container.append(contextSection, autoSection, generalSection);
+    container.append(contextSection, npcSection, autoSection, generalSection);
     return container;
 }

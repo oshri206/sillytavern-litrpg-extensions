@@ -316,6 +316,11 @@ export function createEmptyState() {
         // Loadouts system
         loadouts: [],
 
+        // Important NPC lives system
+        npcLives: {
+            npcs: []
+        },
+
         // Settings system
         settings: {
             contextInjection: {
@@ -344,6 +349,11 @@ export function createEmptyState() {
                     status: true
                 },
                 customPatterns: []
+            },
+            npcLives: {
+                enabled: false,
+                maxChars: 1200,
+                pinnedNpcs: []
             },
             parseHistory: []
         },

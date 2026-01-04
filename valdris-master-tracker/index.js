@@ -49,6 +49,7 @@ import { renderTalentsTab } from './tabs/talents.js';
 import { renderLoadoutsTab } from './tabs/loadouts.js';
 import { renderSettingsTab } from './tabs/settings.js';
 import { buildContextBlock } from './context.js';
+import { buildNpcLivesBlock, initNpcLivesModule, isNpcLivesInitialized } from './modules/npc-lives.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -124,8 +125,11 @@ const TABS = [
 const _cleanup = {
     intervals: [],
     listeners: [],
-    unsubscribers: []
+    unsubscribers: [],
+    eventHandlers: []
 };
+let _eventsRegistered = false;
+let _npcLivesCleanup = null;
 
 /**
  * Helper function to create DOM elements
@@ -3334,6 +3338,90 @@ function getMessageContent(messageRef) {
     return '';
 }
 
+function injectContextBlock(data, contextBlock, position) {
+    if (!data || !contextBlock) return;
+    const targets = {
+        authorNote: ['authorNote', 'author_note', 'authorsNote', 'authorNoteText'],
+        systemPrompt: ['systemPrompt', 'system_prompt', 'systemPromptText'],
+        worldInfo: ['worldInfo', 'world_info', 'worldInfoText']
+    };
+    const keys = targets[position] || targets.authorNote;
+    let injected = false;
+    keys.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            data[key] = data[key] ? `${data[key]}\n\n${contextBlock}` : contextBlock;
+            injected = true;
+        }
+    });
+    if (!injected && data?.prompts) {
+        data.prompts[position] = data.prompts[position]
+            ? `${data.prompts[position]}\n\n${contextBlock}`
+            : contextBlock;
+    }
+}
+
+function ensureNpcLivesModule() {
+    const state = getState();
+    const enabled = state.settings?.npcLives?.enabled;
+    if (enabled && !_npcLivesCleanup) {
+        _npcLivesCleanup = initNpcLivesModule();
+    }
+    if (!enabled && _npcLivesCleanup) {
+        _npcLivesCleanup();
+        _npcLivesCleanup = null;
+    }
+}
+
+function runSelfTest() {
+    const state = getState();
+    const contextSettings = state.settings?.contextInjection || {};
+    const npcSettings = state.settings?.npcLives || {};
+    const results = [];
+
+    const contextBlock = buildContextBlock(state, contextSettings);
+    results.push({
+        name: 'Context injection block builds',
+        pass: typeof contextBlock === 'string' && contextBlock.length > 0
+    });
+
+    const npcBlockDisabled = buildNpcLivesBlock(state, { ...npcSettings, enabled: false }, getContext?.());
+    results.push({
+        name: 'NPC Lives respects toggle',
+        pass: npcBlockDisabled === ''
+    });
+
+    const npcBlock = buildNpcLivesBlock(state, { ...npcSettings, enabled: true, maxChars: 200 }, getContext?.());
+    results.push({
+        name: 'NPC Lives size cap',
+        pass: npcBlock.length <= 200
+    });
+
+    results.push({
+        name: 'NPC Lives initialized when enabled',
+        pass: !npcSettings.enabled || isNpcLivesInitialized()
+    });
+
+    results.push({
+        name: 'Event handlers registered once',
+        pass: _eventsRegistered === true
+    });
+
+    const lines = results.map(result => `${result.pass ? 'PASS' : 'FAIL'}: ${result.name}`);
+    console.log('[VMasterTracker] Selftest\n' + lines.join('\n'));
+
+    const ctx = getContext?.();
+    if (ctx?.addMessage && typeof ctx.addMessage === 'function') {
+        ctx.addMessage({
+            role: 'system',
+            content: lines.join('\n')
+        });
+    } else {
+        showToast(lines.join(' | '), { duration: 8000 });
+    }
+
+    return lines;
+}
+
 function addInventoryItem(name) {
     const state = getState();
     const inventory = [...(state.inventory || [])];
@@ -3617,45 +3705,53 @@ function registerEvents() {
         console.warn('[VMasterTracker] Event source not available');
         return;
     }
+    if (_eventsRegistered) return;
+    _eventsRegistered = true;
+
+    const addHandler = (type, handler) => {
+        if (!type) return;
+        eventSource.on(type, handler);
+        _cleanup.eventHandlers.push({ type, handler });
+    };
 
     // Chat changed - re-render with new chat's data
-    eventSource.on(event_types.CHAT_CHANGED, () => {
+    addHandler(event_types.CHAT_CHANGED, () => {
         console.log('[VMasterTracker] Chat changed, re-rendering');
         render();
     });
 
-    eventSource.on(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (data) => {
+    addHandler(event_types.GENERATE_BEFORE_COMBINE_PROMPTS, (data) => {
         if (!data) return;
         const state = getState();
         const settings = state.settings?.contextInjection;
-        if (!settings?.enabled) return;
-        const contextBlock = buildContextBlock(state, settings);
-        const position = settings.position || 'authorNote';
-        const targets = {
-            authorNote: ['authorNote', 'author_note', 'authorsNote', 'authorNoteText'],
-            systemPrompt: ['systemPrompt', 'system_prompt', 'systemPromptText'],
-            worldInfo: ['worldInfo', 'world_info', 'worldInfoText']
-        };
-        const keys = targets[position] || targets.authorNote;
-        let injected = false;
-        keys.forEach(key => {
-            if (Object.prototype.hasOwnProperty.call(data, key)) {
-                data[key] = data[key] ? `${data[key]}\n\n${contextBlock}` : contextBlock;
-                injected = true;
+        if (settings?.enabled) {
+            const contextBlock = buildContextBlock(state, settings);
+            const position = settings.position || 'authorNote';
+            injectContextBlock(data, contextBlock, position);
+        }
+
+        const npcSettings = state.settings?.npcLives;
+        if (npcSettings?.enabled) {
+            const npcBlock = buildNpcLivesBlock(state, npcSettings, getContext?.());
+            if (npcBlock) {
+                const position = npcSettings.position || 'systemPrompt';
+                injectContextBlock(data, npcBlock, position);
             }
-        });
-        if (!injected && data?.prompts) {
-            data.prompts[position] = data.prompts[position]
-                ? `${data.prompts[position]}\n\n${contextBlock}`
-                : contextBlock;
         }
     });
 
-    eventSource.on(event_types.MESSAGE_RECEIVED, (messageRef) => {
+    addHandler(event_types.MESSAGE_RECEIVED, (messageRef) => {
         const state = getState();
         if (!state.settings?.autoParsing?.enabled) return;
         const content = getMessageContent(messageRef);
         parseMessageForChanges(content);
+    });
+
+    const selfTestEvent = event_types.MESSAGE_SENT || event_types.MESSAGE_RECEIVED;
+    addHandler(selfTestEvent, (messageRef) => {
+        const content = getMessageContent(messageRef).trim();
+        if (!content.startsWith('/selftest')) return;
+        runSelfTest();
     });
 
     console.log('[VMasterTracker] Events registered');
@@ -3677,6 +3773,21 @@ function cleanup() {
         if (typeof unsub === 'function') unsub();
     });
     _cleanup.unsubscribers = [];
+
+    _cleanup.eventHandlers.forEach(({ type, handler }) => {
+        if (eventSource?.off) {
+            eventSource.off(type, handler);
+        } else if (eventSource?.removeListener) {
+            eventSource.removeListener(type, handler);
+        }
+    });
+    _cleanup.eventHandlers = [];
+    _eventsRegistered = false;
+
+    if (_npcLivesCleanup) {
+        _npcLivesCleanup();
+        _npcLivesCleanup = null;
+    }
 
     if (UI.root) {
         UI.root.remove();
@@ -3734,12 +3845,16 @@ window.VMasterTracker = {
     try {
         mountUI();
         registerEvents();
+        ensureNpcLivesModule();
 
         // Initial render
         render();
 
         // Subscribe to state changes for re-render
-        const unsub = subscribe(() => render());
+        const unsub = subscribe(() => {
+            render();
+            ensureNpcLivesModule();
+        });
         _cleanup.unsubscribers.push(unsub);
 
         console.log('[VMasterTracker] Ready!');
