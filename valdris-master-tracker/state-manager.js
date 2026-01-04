@@ -275,6 +275,79 @@ export function createEmptyState() {
             custom: []  // { id, name, current, max, color, criticalThreshold, description }
         },
 
+        // Blessings system
+        blessings: [],
+
+        // Masteries system
+        masteries: [],
+
+        // Karma system
+        karma: {
+            value: 0,
+            history: [],
+            factionKarma: [],
+            currentEffects: []
+        },
+
+        // Limitations system
+        limitations: [],
+
+        // Collections system
+        collections: {
+            monsters: [],
+            recipes: [],
+            locations: [],
+            rareItems: [],
+            achievements: []
+        },
+
+        // Guilds system
+        guilds: [],
+
+        // Dungeons system
+        dungeons: [],
+
+        // Talents system
+        talents: {
+            availablePoints: 0,
+            trees: []
+        },
+
+        // Loadouts system
+        loadouts: [],
+
+        // Settings system
+        settings: {
+            contextInjection: {
+                enabled: false,
+                position: 'authorNote',
+                includeStats: true,
+                includeEquipment: true,
+                includeBuffsDebuffs: true,
+                includeSurvival: true,
+                includeResources: true,
+                customHeader: '',
+                customFooter: ''
+            },
+            autoParsing: {
+                enabled: false,
+                autoApply: false,
+                showToasts: true,
+                undoWindow: 5,
+                parseCategories: {
+                    damage: true,
+                    healing: true,
+                    mana: true,
+                    xp: true,
+                    gold: true,
+                    items: true,
+                    status: true
+                },
+                customPatterns: []
+            },
+            parseHistory: []
+        },
+
         // UI state
         panelCollapsed: false
     };
