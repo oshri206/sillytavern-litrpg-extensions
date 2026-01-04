@@ -244,6 +244,37 @@ export function createEmptyState() {
         // Inventory view preference
         inventoryView: 'grid',  // 'grid' or 'list'
 
+        // Legacy system
+        legacy: {
+            bloodline: {
+                name: '',
+                traits: [],
+                ancestors: [],  // { name, relation, notes }
+                curses: [],
+                blessings: []
+            },
+            heirs: [],  // { name, relation, age, status, notes }
+            deeds: [],  // { name, description, date, impact }
+            inheritance: [],  // { item, recipient, conditions }
+            house: {
+                name: '',
+                motto: '',
+                status: 'Established',  // Rising, Established, Declining, Fallen, Extinct
+                allies: [],
+                enemies: []
+            }
+        },
+
+        // Survival meters system
+        survivalMeters: {
+            hunger: { current: 100, max: 100, enabled: true, criticalThreshold: 20, notes: '' },
+            thirst: { current: 100, max: 100, enabled: true, criticalThreshold: 20, notes: '' },
+            fatigue: { current: 0, max: 100, enabled: true, criticalThreshold: 80, notes: '' },
+            sanity: { current: 100, max: 100, enabled: true, criticalThreshold: 20, notes: '' },
+            warmth: { current: 100, max: 100, enabled: true, criticalThreshold: 20, notes: '' },
+            custom: []  // { id, name, current, max, color, criticalThreshold, description }
+        },
+
         // UI state
         panelCollapsed: false
     };

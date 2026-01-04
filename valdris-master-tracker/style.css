@@ -4844,3 +4844,794 @@
     gap: 8px;
     padding-top: 8px;
 }
+
+/* ============================================
+   LEGACY TAB STYLES
+   ============================================ */
+
+.vmt_legacy_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_legacy_summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_legacy_section {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    overflow: hidden;
+}
+
+.vmt_legacy_section_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.vmt_legacy_section_header:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.vmt_legacy_section_toggle {
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+    width: 12px;
+    font-family: monospace;
+}
+
+.vmt_legacy_section_title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_legacy_section_content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_legacy_field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vmt_legacy_house_basics {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.vmt_legacy_house_basics .vmt_legacy_field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.vmt_legacy_list_section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_legacy_list_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vmt_legacy_list_title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--vmt-text-secondary);
+    text-transform: uppercase;
+}
+
+.vmt_legacy_tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.vmt_legacy_tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 1px solid;
+}
+
+.vmt_tag_trait {
+    background: rgba(85, 136, 238, 0.15);
+    color: #5588ee;
+    border-color: rgba(85, 136, 238, 0.3);
+}
+
+.vmt_tag_curse {
+    background: rgba(221, 68, 68, 0.15);
+    color: #dd6666;
+    border-color: rgba(221, 68, 68, 0.3);
+}
+
+.vmt_tag_blessing {
+    background: rgba(255, 221, 119, 0.15);
+    color: #ddaa33;
+    border-color: rgba(255, 221, 119, 0.3);
+}
+
+.vmt_tag_ally {
+    background: rgba(102, 221, 136, 0.15);
+    color: #66dd88;
+    border-color: rgba(102, 221, 136, 0.3);
+}
+
+.vmt_tag_enemy {
+    background: rgba(221, 68, 68, 0.15);
+    color: #dd6666;
+    border-color: rgba(221, 68, 68, 0.3);
+}
+
+.vmt_tag_remove {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.vmt_tag_remove:hover {
+    opacity: 1;
+}
+
+.vmt_legacy_dual_lists {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.vmt_legacy_dual_lists .vmt_legacy_list_section {
+    flex: 1;
+    min-width: 200px;
+}
+
+.vmt_ancestors_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_ancestor_item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border-left: 3px solid var(--vmt-accent);
+}
+
+.vmt_ancestor_info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vmt_ancestor_name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_ancestor_relation {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    font-style: italic;
+}
+
+.vmt_ancestor_notes {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    padding-left: 10px;
+    border-left: 2px solid var(--vmt-border-subtle);
+    margin-left: 5px;
+}
+
+.vmt_ancestor_actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.vmt_heirs_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_heir_card {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border-left: 3px solid var(--vmt-accent);
+}
+
+.vmt_heir_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.vmt_heir_info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.vmt_heir_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_heir_relation {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_heir_age {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_heir_status {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.vmt_heir_status_alive {
+    background: rgba(102, 221, 136, 0.2);
+    color: #66dd88;
+}
+
+.vmt_heir_status_deceased {
+    background: rgba(136, 136, 136, 0.2);
+    color: #888888;
+}
+
+.vmt_heir_status_missing {
+    background: rgba(255, 187, 51, 0.2);
+    color: #ffbb33;
+}
+
+.vmt_heir_status_estranged {
+    background: rgba(221, 68, 68, 0.2);
+    color: #dd6666;
+}
+
+.vmt_heir_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_heir_notes {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_deeds_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_deed_card {
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border-left: 3px solid var(--vmt-accent);
+}
+
+.vmt_deed_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.vmt_deed_info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.vmt_deed_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_deed_date {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+}
+
+.vmt_deed_impact {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    border: 1px solid;
+}
+
+.vmt_deed_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_deed_description {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    line-height: 1.4;
+}
+
+.vmt_inheritance_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_inheritance_item {
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.vmt_inheritance_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt_inheritance_item_name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_inheritance_arrow {
+    color: var(--vmt-text-muted);
+    font-size: 12px;
+}
+
+.vmt_inheritance_recipient {
+    font-size: 13px;
+    color: var(--vmt-accent);
+}
+
+.vmt_inheritance_actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.vmt_inheritance_conditions {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    margin-top: 6px;
+    padding-left: 10px;
+    border-left: 2px solid var(--vmt-border-subtle);
+}
+
+.vmt_house_status_row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vmt_house_status_badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+}
+
+.vmt_input_italic {
+    font-style: italic;
+}
+
+/* ============================================
+   SURVIVAL METERS TAB STYLES
+   ============================================ */
+
+.vmt_survival_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_survival_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_survival_status {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.vmt_survival_warning {
+    color: #ff6666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vmt_warning_icon {
+    font-size: 16px;
+}
+
+.vmt_survival_ok {
+    color: #66dd88;
+}
+
+.vmt_view_toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_btn_active {
+    background: var(--vmt-accent) !important;
+    color: white !important;
+}
+
+.vmt_meter_toggles {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.vmt_toggles_label {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    text-transform: uppercase;
+}
+
+.vmt_meter_toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.vmt_meter_toggle input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.vmt_toggle_label {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_meters_grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vmt_meters_compact .vmt_survival_meter {
+    padding: 8px 12px;
+}
+
+.vmt_meters_compact .vmt_meter_controls {
+    display: none;
+}
+
+.vmt_survival_meter {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    padding: 12px 16px;
+    transition: all 0.2s ease;
+}
+
+.vmt_survival_meter:hover {
+    border-color: var(--vmt-border-accent);
+}
+
+.vmt_survival_meter.vmt_meter_disabled {
+    opacity: 0.5;
+}
+
+.vmt_survival_meter.vmt_meter_critical {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.vmt_meter_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.vmt_meter_label_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt_meter_icon {
+    font-size: 16px;
+}
+
+.vmt_meter_label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_meter_warning_icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+}
+
+.vmt_meter_value_display {
+    font-size: 14px;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_meter_current {
+    font-weight: 700;
+}
+
+.vmt_meter_separator {
+    color: var(--vmt-text-muted);
+    margin: 0 2px;
+}
+
+.vmt_meter_max {
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_meter_bar_container {
+    position: relative;
+}
+
+.vmt_meter_bar {
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.vmt_meter_fill {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.vmt_meter_healthy {
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+}
+
+.vmt_meter_warning {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.vmt_meter_critical {
+    background: linear-gradient(90deg, #f87171, #ef4444);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.vmt_meter_value_overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.vmt_meter_controls {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_meter_quick_adjust {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.vmt_meter_input {
+    width: 60px;
+    padding: 4px 6px;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid var(--vmt-border-subtle);
+    background: var(--vmt-bg-input);
+    color: var(--vmt-text-primary);
+    font-size: 12px;
+}
+
+.vmt_meter_settings {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.vmt_meter_setting {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_input_sm {
+    width: 50px !important;
+    padding: 3px 4px !important;
+    font-size: 11px !important;
+}
+
+.vmt_meter_notes {
+    margin-top: 4px;
+}
+
+.vmt_meter_notes input {
+    width: 100%;
+}
+
+/* Custom Meters Section */
+.vmt_custom_meters_section {
+    margin-top: 8px;
+}
+
+.vmt_custom_meters_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_section_title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_custom_meters_grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_custom_meter_card {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.vmt_custom_meter_card:hover {
+    border-color: var(--vmt-border-accent);
+}
+
+.vmt_custom_meter_card.vmt_meter_critical {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.vmt_custom_meter_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.vmt_custom_meter_name_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt_custom_meter_color_swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.vmt_custom_meter_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_custom_meter_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_custom_meter_description {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--vmt-border-subtle);
+}
+
+/* Modal field third width */
+.vmt_modal_field_third {
+    flex: 0 0 calc(33.33% - 8px);
+}
