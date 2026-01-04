@@ -106,6 +106,72 @@ export function createEmptyState() {
         // Multiclass support
         secondaryClasses: [],
 
+        // Skills system
+        skills: {
+            active: [],  // { id, name, description, cooldown, resourceCost, rank, damageEffect, category }
+            passive: []  // { id, name, description, effect, category }
+        },
+
+        // Proficiencies (toggleable checkboxes)
+        proficiencies: {
+            weapons: {
+                simple: false,
+                martial: false,
+                exotic: false,
+                ranged: false,
+                twoHanded: false
+            },
+            armor: {
+                light: false,
+                medium: false,
+                heavy: false,
+                shields: false
+            },
+            tools: {
+                artisan: false,
+                gaming: false,
+                musical: false,
+                thieves: false,
+                herbalism: false,
+                alchemist: false,
+                smith: false
+            },
+            languages: {
+                common: true,
+                elvish: false,
+                dwarvish: false,
+                orcish: false,
+                draconic: false,
+                celestial: false,
+                infernal: false,
+                abyssal: false
+            },
+            vehicles: {
+                land: false,
+                water: false,
+                air: false
+            }
+        },
+
+        // Spells system
+        spells: [],  // { id, name, description, school, defaultManaCost, currentManaCost, defaultDamageEffect, currentDamageEffect, castingTime, range, duration, concentration, level }
+
+        // Spell slots per level
+        spellSlots: {
+            1: { used: 0, max: 0 },
+            2: { used: 0, max: 0 },
+            3: { used: 0, max: 0 },
+            4: { used: 0, max: 0 },
+            5: { used: 0, max: 0 },
+            6: { used: 0, max: 0 },
+            7: { used: 0, max: 0 },
+            8: { used: 0, max: 0 },
+            9: { used: 0, max: 0 }
+        },
+
+        // Traits system
+        traits: [],  // { id, name, description, source, mechanicalEffect, category: 'innate'|'acquired'|'racial'|'background' }
+
         // UI state
         panelCollapsed: false
     };
