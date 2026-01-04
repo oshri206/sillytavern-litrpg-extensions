@@ -3849,3 +3849,998 @@
     height: 40px;
     cursor: pointer;
 }
+
+/* ============================================
+   TAB SCROLLING SYSTEM
+   ============================================ */
+
+.vmt_tabs_wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    padding: 0 2px;
+}
+
+.vmt_tab_scroll_btn {
+    flex-shrink: 0;
+    width: 24px;
+    height: 32px;
+    border: none;
+    background: linear-gradient(135deg, rgba(30, 20, 50, 0.9), rgba(20, 15, 40, 0.95));
+    color: var(--vmt-text-secondary);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    z-index: 2;
+}
+
+.vmt_tab_scroll_btn:hover {
+    background: var(--vmt-accent);
+    color: white;
+}
+
+.vmt_tab_scroll_btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.vmt_tab_scroll_left {
+    margin-right: 2px;
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.vmt_tab_scroll_right {
+    margin-left: 2px;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.vmt_tabs {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex: 1;
+    padding: 4px 0;
+}
+
+.vmt_tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* ============================================
+   CONTRACTS TAB STYLES
+   ============================================ */
+
+.vmt_contracts_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_contracts_summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_summary_overdue .vmt_summary_value {
+    color: #ff4466 !important;
+}
+
+.vmt_contracts_filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+
+.vmt_contracts_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_contract_item {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    border-left: 4px solid var(--vmt-accent);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.vmt_contract_item:hover {
+    border-color: var(--vmt-border-accent);
+    background: var(--vmt-bg-card-hover);
+}
+
+.vmt_contract_overdue {
+    background: rgba(255, 68, 102, 0.1);
+    border-color: rgba(255, 68, 102, 0.3);
+}
+
+.vmt_contract_complete {
+    opacity: 0.7;
+}
+
+.vmt_contract_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vmt_contract_expand_toggle {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+    width: 16px;
+    text-align: center;
+}
+
+.vmt_contract_info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vmt_contract_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+    margin-bottom: 4px;
+}
+
+.vmt_contract_meta_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vmt_contract_type_badge,
+.vmt_contract_status_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_contract_contractor {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_contract_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_contract_progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_contract_progress_bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.vmt_contract_progress_fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--vmt-accent), #88ddaa);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.vmt_contract_progress_text {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    white-space: nowrap;
+}
+
+.vmt_contract_details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_contract_description {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+    line-height: 1.4;
+}
+
+.vmt_contract_section_label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--vmt-text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.vmt_objectives_list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.vmt_objective_item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.vmt_objective_item.completed {
+    opacity: 0.6;
+}
+
+.vmt_objective_item.completed .vmt_objective_text {
+    text-decoration: line-through;
+}
+
+.vmt_objective_checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.vmt_objective_text {
+    font-size: 12px;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_contract_rewards_penalties {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vmt_contract_reward,
+.vmt_contract_penalty,
+.vmt_contract_deadline {
+    font-size: 12px;
+}
+
+.vmt_contract_deadline.overdue {
+    color: #ff4466;
+}
+
+.vmt_contract_deadline.overdue .vmt_value {
+    font-weight: 600;
+}
+
+.vmt_contract_status_controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+}
+
+/* ============================================
+   PROPERTIES TAB STYLES
+   ============================================ */
+
+.vmt_properties_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_properties_summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_summary_total_value .vmt_summary_value.vmt_highlight {
+    color: #ffdd77 !important;
+}
+
+.vmt_summary_income .vmt_summary_value.positive {
+    color: #66dd88 !important;
+}
+
+.vmt_summary_expenses .vmt_summary_value.negative {
+    color: #ff6666 !important;
+}
+
+.vmt_summary_net.positive .vmt_summary_value {
+    color: #66dd88 !important;
+}
+
+.vmt_summary_net.negative .vmt_summary_value {
+    color: #ff6666 !important;
+}
+
+.vmt_properties_filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+
+.vmt_properties_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_property_card {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    border-left: 4px solid var(--vmt-accent);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.vmt_property_card:hover {
+    border-color: var(--vmt-border-accent);
+    background: var(--vmt-bg-card-hover);
+}
+
+.vmt_property_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vmt_property_expand_toggle {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+    width: 16px;
+    text-align: center;
+}
+
+.vmt_property_icon {
+    font-size: 20px;
+}
+
+.vmt_property_info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vmt_property_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+    margin-bottom: 4px;
+}
+
+.vmt_property_meta_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vmt_property_type_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_property_location {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_property_value_display {
+    text-align: right;
+    margin-right: 10px;
+}
+
+.vmt_property_value_amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffdd77;
+}
+
+.vmt_property_income {
+    font-size: 11px;
+}
+
+.vmt_property_income.positive {
+    color: #66dd88;
+}
+
+.vmt_property_income.negative {
+    color: #ff6666;
+}
+
+.vmt_property_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_property_details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_property_description {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+    line-height: 1.4;
+}
+
+.vmt_property_finances {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.vmt_finance_item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.vmt_finance_item.income .vmt_value {
+    color: #66dd88;
+}
+
+.vmt_finance_item.expenses .vmt_value {
+    color: #ff6666;
+}
+
+.vmt_finance_item.net {
+    padding-top: 4px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    font-weight: 600;
+}
+
+.vmt_finance_item.net.positive .vmt_value {
+    color: #66dd88;
+}
+
+.vmt_finance_item.net.negative .vmt_value {
+    color: #ff6666;
+}
+
+.vmt_property_staff,
+.vmt_property_upgrades {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+}
+
+.vmt_staff_list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vmt_staff_item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.vmt_staff_name {
+    color: var(--vmt-text-primary);
+}
+
+.vmt_staff_role {
+    color: var(--vmt-text-muted);
+    font-style: italic;
+}
+
+.vmt_upgrades_list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.vmt_upgrade_badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(85, 136, 238, 0.2);
+    color: #5588ee;
+    border-radius: 4px;
+    border: 1px solid rgba(85, 136, 238, 0.3);
+}
+
+.vmt_property_notes {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    font-style: italic;
+}
+
+/* ============================================
+   TRANSFORMATIONS TAB STYLES
+   ============================================ */
+
+.vmt_transformations_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_transformations_summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_summary_curse .vmt_summary_value {
+    color: #dd4444 !important;
+}
+
+.vmt_summary_blessing .vmt_summary_value {
+    color: #ffdd77 !important;
+}
+
+.vmt_transformations_filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+
+.vmt_transformations_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_transformation_item {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    border-left: 4px solid var(--vmt-accent);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.vmt_transformation_item:hover {
+    border-color: var(--vmt-border-accent);
+    background: var(--vmt-bg-card-hover);
+}
+
+.vmt_transformation_item.vmt_inactive {
+    opacity: 0.6;
+}
+
+.vmt_transformation_item.vmt_expired {
+    opacity: 0.5;
+    background: rgba(100, 100, 100, 0.1);
+}
+
+.vmt_transformation_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vmt_toggle_btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--vmt-border-subtle);
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--vmt-text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.vmt_toggle_btn.active {
+    border-color: #66dd88;
+    background: rgba(102, 221, 136, 0.2);
+    color: #66dd88;
+}
+
+.vmt_toggle_btn:hover {
+    border-color: var(--vmt-accent);
+}
+
+.vmt_transformation_expand_toggle {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+    width: 16px;
+    text-align: center;
+}
+
+.vmt_transformation_info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vmt_transformation_name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vmt_inactive_badge,
+.vmt_expired_badge {
+    font-size: 10px;
+    color: var(--vmt-text-muted);
+    font-weight: normal;
+}
+
+.vmt_expired_badge {
+    color: #ff6666;
+}
+
+.vmt_transformation_meta_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vmt_transformation_type_badge,
+.vmt_transformation_duration_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_reversible_badge {
+    font-size: 9px;
+    padding: 2px 5px;
+    background: rgba(85, 136, 238, 0.2);
+    color: #5588ee;
+    border-radius: 3px;
+    border: 1px solid rgba(85, 136, 238, 0.3);
+}
+
+.vmt_transformation_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_transformation_effects_preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_effect_badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(179, 128, 255, 0.15);
+    color: #b380ff;
+    border-radius: 3px;
+    border: 1px solid rgba(179, 128, 255, 0.25);
+}
+
+.vmt_effect_more {
+    font-size: 10px;
+    color: var(--vmt-text-muted);
+    padding: 2px 4px;
+}
+
+.vmt_transformation_details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_transformation_source,
+.vmt_transformation_expiration,
+.vmt_transformation_reversal {
+    font-size: 12px;
+}
+
+.vmt_transformation_expiration.expired {
+    color: #ff6666;
+}
+
+.vmt_transformation_description {
+    font-size: 12px;
+    color: var(--vmt-text-secondary);
+    line-height: 1.4;
+}
+
+.vmt_transformation_effects {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+}
+
+.vmt_effects_list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vmt_effect_item {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    color: var(--vmt-text-primary);
+}
+
+/* ============================================
+   BOUNTIES TAB STYLES
+   ============================================ */
+
+.vmt_bounties_tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.vmt_bounties_summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+}
+
+.vmt_summary_total_bounty.danger .vmt_summary_value {
+    font-weight: 700;
+}
+
+.vmt_bounty_warning {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(221, 68, 68, 0.1);
+    border: 1px solid rgba(221, 68, 68, 0.3);
+    border-radius: 8px;
+}
+
+.vmt_warning_icon {
+    font-size: 20px;
+}
+
+.vmt_warning_text {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.vmt_bounties_filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+}
+
+.vmt_bounties_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.vmt_bounty_item {
+    background: var(--vmt-bg-card);
+    border-radius: 8px;
+    border: 1px solid var(--vmt-border-subtle);
+    border-left: 4px solid #666666;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.vmt_bounty_item:hover {
+    border-color: var(--vmt-border-accent);
+    background: var(--vmt-bg-card-hover);
+}
+
+.vmt_bounty_active {
+    background: rgba(221, 68, 68, 0.05);
+}
+
+.vmt_bounty_legendary {
+    box-shadow: 0 0 15px rgba(255, 170, 51, 0.2);
+}
+
+.vmt_bounty_extreme {
+    box-shadow: 0 0 10px rgba(221, 68, 68, 0.15);
+}
+
+.vmt_bounty_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vmt_bounty_expand_toggle {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--vmt-text-muted);
+    width: 16px;
+    text-align: center;
+}
+
+.vmt_bounty_info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vmt_bounty_issuer_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.vmt_bounty_issuer {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vmt-text-primary);
+}
+
+.vmt_bounty_danger_badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.vmt_bounty_meta_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vmt_bounty_status_badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+}
+
+.vmt_bounty_region {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+}
+
+.vmt_bounty_amount_display {
+    text-align: right;
+    margin-right: 10px;
+}
+
+.vmt_bounty_amount {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.vmt_bounty_gold_label {
+    font-size: 10px;
+    color: var(--vmt-text-muted);
+    text-transform: uppercase;
+}
+
+.vmt_bounty_actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vmt_bounty_reason_preview {
+    font-size: 11px;
+    color: var(--vmt-text-secondary);
+    margin-top: 6px;
+    padding-left: 26px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vmt_bounty_details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--vmt-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vmt_bounty_reason_full {
+    font-size: 12px;
+}
+
+.vmt_bounty_hunters {
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+}
+
+.vmt_hunters_list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.vmt_hunter_badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(221, 68, 68, 0.15);
+    color: #dd6666;
+    border-radius: 4px;
+    border: 1px solid rgba(221, 68, 68, 0.25);
+}
+
+.vmt_bounty_notes {
+    font-size: 11px;
+    color: var(--vmt-text-muted);
+    font-style: italic;
+}
+
+.vmt_bounty_status_controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+}
