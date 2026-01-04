@@ -32,6 +32,10 @@ import { renderReputationTab } from './tabs/reputation.js';
 import { renderCompanionsTab } from './tabs/companions.js';
 import { renderAchievementsTab } from './tabs/achievements.js';
 import { renderAffinitiesTab } from './tabs/affinities.js';
+import { renderContractsTab } from './tabs/contracts.js';
+import { renderPropertiesTab } from './tabs/properties.js';
+import { renderTransformationsTab } from './tabs/transformations.js';
+import { renderBountiesTab } from './tabs/bounties.js';
 
 // SillyTavern module references
 let extension_settings, getContext, saveSettingsDebounced;
@@ -84,7 +88,11 @@ const TABS = [
     { key: 'reputation', label: 'Reputation', icon: '' },
     { key: 'companions', label: 'Companions', icon: '' },
     { key: 'achievements', label: 'Achievements', icon: '' },
-    { key: 'affinities', label: 'Affinities', icon: '' }
+    { key: 'affinities', label: 'Affinities', icon: '' },
+    { key: 'contracts', label: 'Contracts', icon: '' },
+    { key: 'properties', label: 'Properties', icon: '' },
+    { key: 'transformations', label: 'Forms', icon: '' },
+    { key: 'bounties', label: 'Bounties', icon: '' }
 ];
 
 // Cleanup tracking
@@ -152,7 +160,11 @@ function mountUI() {
                 </div>
             </div>
 
-            <div class="vmt_tabs" id="vmt_tabs"></div>
+            <div class="vmt_tabs_wrapper">
+                <button class="vmt_tab_scroll_btn vmt_tab_scroll_left" id="vmt_tab_scroll_left" title="Scroll left">‹</button>
+                <div class="vmt_tabs" id="vmt_tabs"></div>
+                <button class="vmt_tab_scroll_btn vmt_tab_scroll_right" id="vmt_tab_scroll_right" title="Scroll right">›</button>
+            </div>
             <div class="vmt_body" id="vmt_body"></div>
 
             <div class="vmt_footer">
@@ -186,9 +198,41 @@ function mountUI() {
         btn.addEventListener('click', () => {
             UI.activeTab = t.key;
             render();
+            // Scroll active tab into view
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         });
         tabsEl.appendChild(btn);
     }
+
+    // Set up tab scrolling
+    const scrollLeftBtn = wrapper.querySelector('#vmt_tab_scroll_left');
+    const scrollRightBtn = wrapper.querySelector('#vmt_tab_scroll_right');
+
+    function updateTabScrollButtons() {
+        if (!tabsEl) return;
+        const canScrollLeft = tabsEl.scrollLeft > 0;
+        const canScrollRight = tabsEl.scrollLeft < (tabsEl.scrollWidth - tabsEl.clientWidth - 1);
+        scrollLeftBtn.classList.toggle('vmt_scroll_hidden', !canScrollLeft);
+        scrollRightBtn.classList.toggle('vmt_scroll_hidden', !canScrollRight);
+    }
+
+    scrollLeftBtn.addEventListener('click', () => {
+        tabsEl.scrollBy({ left: -150, behavior: 'smooth' });
+    });
+
+    scrollRightBtn.addEventListener('click', () => {
+        tabsEl.scrollBy({ left: 150, behavior: 'smooth' });
+    });
+
+    tabsEl.addEventListener('scroll', updateTabScrollButtons);
+
+    // Initial check for scroll buttons
+    setTimeout(updateTabScrollButtons, 100);
+
+    // Update on window resize
+    const resizeHandler = () => updateTabScrollButtons();
+    window.addEventListener('resize', resizeHandler);
+    _cleanup.listeners.push({ element: window, event: 'resize', handler: resizeHandler });
 
     // Set up header buttons
     wrapper.querySelector('#vmt_btn_collapse').addEventListener('click', togglePanel);
@@ -2012,6 +2056,528 @@ function openModal(type, data = {}) {
             );
             break;
 
+        // ===== Contract Modals =====
+        case 'add-contract':
+        case 'edit-contract':
+            titleEl.textContent = type === 'add-contract' ? 'Add Contract' : 'Edit Contract';
+            const contract = data.contract || {
+                name: '', type: 'Quest', contractor: '', description: '',
+                objectives: [], rewards: '', penalties: '', deadline: '', status: 'Active'
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Contract Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_contract_name',
+                        value: contract.name,
+                        placeholder: 'e.g., Slay the Dragon'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Type'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_contract_type' },
+                            ['Quest', 'Pact', 'Debt', 'Service', 'Other'].map(t =>
+                                h('option', { value: t, selected: contract.type === t ? 'selected' : null }, t)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Contractor'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_contract_contractor',
+                            value: contract.contractor || '',
+                            placeholder: 'Who assigned this'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_contract_desc',
+                        placeholder: 'Contract details...'
+                    }, contract.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Objectives (one per line)'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_contract_objectives',
+                        placeholder: 'Find the cave\nDefeat the monster\nReturn with proof'
+                    }, (contract.objectives || []).map(o => o.text).join('\n'))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Rewards'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_contract_rewards',
+                            value: contract.rewards || '',
+                            placeholder: '500 gold, rare item'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Penalties'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_contract_penalties',
+                            value: contract.penalties || '',
+                            placeholder: 'Loss of reputation'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Deadline (optional)'),
+                    h('input', {
+                        type: 'datetime-local',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_contract_deadline',
+                        value: contract.deadline || ''
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const objectivesText = document.getElementById('vmt_contract_objectives').value.trim();
+                        const objectiveLines = objectivesText ? objectivesText.split('\n').filter(l => l.trim()) : [];
+                        const existingObjectives = contract.objectives || [];
+                        const newContract = {
+                            name: document.getElementById('vmt_contract_name').value.trim(),
+                            type: document.getElementById('vmt_contract_type').value,
+                            contractor: document.getElementById('vmt_contract_contractor').value.trim(),
+                            description: document.getElementById('vmt_contract_desc').value.trim(),
+                            objectives: objectiveLines.map((text, i) => ({
+                                text: text.trim(),
+                                completed: existingObjectives[i]?.text === text.trim() ? existingObjectives[i].completed : false
+                            })),
+                            rewards: document.getElementById('vmt_contract_rewards').value.trim(),
+                            penalties: document.getElementById('vmt_contract_penalties').value.trim(),
+                            deadline: document.getElementById('vmt_contract_deadline').value || null,
+                            status: contract.status || 'Active'
+                        };
+                        if (newContract.name) {
+                            data.onSave(newContract);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Property Modals =====
+        case 'add-property':
+        case 'edit-property':
+            titleEl.textContent = type === 'add-property' ? 'Add Property' : 'Edit Property';
+            const property = data.property || {
+                name: '', type: 'Home', location: '', description: '',
+                value: 0, income: 0, expenses: 0, staff: [], upgrades: [], notes: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Property Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_property_name',
+                        value: property.name,
+                        placeholder: 'e.g., Riverside Manor'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Type'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_property_type' },
+                            ['Home', 'Shop', 'Land', 'Business', 'Stronghold', 'Other'].map(t =>
+                                h('option', { value: t, selected: property.type === t ? 'selected' : null }, t)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Location'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_property_location',
+                            value: property.location || '',
+                            placeholder: 'City/Region'
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_property_desc',
+                        placeholder: 'Property details...'
+                    }, property.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Value (gold)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_property_value',
+                            value: property.value || 0,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Income/period'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_property_income',
+                            value: property.income || 0,
+                            min: 0
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_third' },
+                        h('label', { class: 'vmt_modal_label' }, 'Expenses/period'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_property_expenses',
+                            value: property.expenses || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Staff (name:role, one per line)'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_property_staff',
+                        placeholder: 'John:Butler\nMary:Cook'
+                    }, (property.staff || []).map(s => `${s.name}:${s.role}`).join('\n'))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Upgrades (one per line)'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_property_upgrades',
+                        placeholder: 'Stone walls\nWell\nStables'
+                    }, (property.upgrades || []).join('\n'))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_property_notes',
+                        placeholder: 'Additional notes...'
+                    }, property.notes || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const staffText = document.getElementById('vmt_property_staff').value.trim();
+                        const staffLines = staffText ? staffText.split('\n').filter(l => l.includes(':')) : [];
+                        const upgradesText = document.getElementById('vmt_property_upgrades').value.trim();
+                        const upgradeLines = upgradesText ? upgradesText.split('\n').filter(l => l.trim()) : [];
+                        const newProperty = {
+                            name: document.getElementById('vmt_property_name').value.trim(),
+                            type: document.getElementById('vmt_property_type').value,
+                            location: document.getElementById('vmt_property_location').value.trim(),
+                            description: document.getElementById('vmt_property_desc').value.trim(),
+                            value: parseInt(document.getElementById('vmt_property_value').value, 10) || 0,
+                            income: parseInt(document.getElementById('vmt_property_income').value, 10) || 0,
+                            expenses: parseInt(document.getElementById('vmt_property_expenses').value, 10) || 0,
+                            staff: staffLines.map(line => {
+                                const [name, role] = line.split(':');
+                                return { name: name.trim(), role: (role || '').trim() };
+                            }),
+                            upgrades: upgradeLines.map(l => l.trim()),
+                            notes: document.getElementById('vmt_property_notes').value.trim()
+                        };
+                        if (newProperty.name) {
+                            data.onSave(newProperty);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Transformation Modals =====
+        case 'add-transformation':
+        case 'edit-transformation':
+            titleEl.textContent = type === 'add-transformation' ? 'Add Transformation' : 'Edit Transformation';
+            const transformation = data.transformation || {
+                name: '', type: 'Magical', source: '', description: '',
+                effects: [], duration: 'Permanent', expiresAt: null,
+                reversible: false, reversalMethod: '', active: true
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Transformation Name'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_transform_name',
+                        value: transformation.name,
+                        placeholder: 'e.g., Werewolf Curse'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Type'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_transform_type' },
+                            ['Racial', 'Curse', 'Blessing', 'Magical', 'Class', 'Other'].map(t =>
+                                h('option', { value: t, selected: transformation.type === t ? 'selected' : null }, t)
+                            )
+                        )
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Duration'),
+                        h('select', { class: 'vmt_modal_select', id: 'vmt_transform_duration' },
+                            ['Permanent', 'Temporary', 'Conditional'].map(d =>
+                                h('option', { value: d, selected: transformation.duration === d ? 'selected' : null }, d)
+                            )
+                        )
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Source'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_transform_source',
+                        value: transformation.source || '',
+                        placeholder: 'What caused this transformation'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Description'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_transform_desc',
+                        placeholder: 'Transformation details...'
+                    }, transformation.description || '')
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Effects (one per line)'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_transform_effects',
+                        placeholder: '+5 STR\n-2 CHA\nDarkvision 60ft'
+                    }, (transformation.effects || []).join('\n'))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Expires At (for temporary)'),
+                    h('input', {
+                        type: 'datetime-local',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_transform_expires',
+                        value: transformation.expiresAt || ''
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_checkbox_label' },
+                        h('input', {
+                            type: 'checkbox',
+                            id: 'vmt_transform_reversible',
+                            checked: transformation.reversible ? 'checked' : null
+                        }),
+                        'Reversible'
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Reversal Method'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_transform_reversal',
+                        value: transformation.reversalMethod || '',
+                        placeholder: 'How to reverse (if reversible)'
+                    })
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const effectsText = document.getElementById('vmt_transform_effects').value.trim();
+                        const effectLines = effectsText ? effectsText.split('\n').filter(l => l.trim()) : [];
+                        const newTransformation = {
+                            name: document.getElementById('vmt_transform_name').value.trim(),
+                            type: document.getElementById('vmt_transform_type').value,
+                            duration: document.getElementById('vmt_transform_duration').value,
+                            source: document.getElementById('vmt_transform_source').value.trim(),
+                            description: document.getElementById('vmt_transform_desc').value.trim(),
+                            effects: effectLines.map(l => l.trim()),
+                            expiresAt: document.getElementById('vmt_transform_expires').value || null,
+                            reversible: document.getElementById('vmt_transform_reversible').checked,
+                            reversalMethod: document.getElementById('vmt_transform_reversal').value.trim(),
+                            active: transformation.active !== undefined ? transformation.active : true
+                        };
+                        if (newTransformation.name) {
+                            data.onSave(newTransformation);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
+        // ===== Bounty Modals =====
+        case 'add-bounty':
+        case 'edit-bounty':
+            titleEl.textContent = type === 'add-bounty' ? 'Add Bounty' : 'Edit Bounty';
+            const bounty = data.bounty || {
+                issuer: '', amount: 0, reason: '', region: '',
+                status: 'Active', hunters: [], notes: ''
+            };
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_row' },
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Issuer'),
+                        h('input', {
+                            type: 'text',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_bounty_issuer',
+                            value: bounty.issuer,
+                            placeholder: 'Who placed the bounty'
+                        })
+                    ),
+                    h('div', { class: 'vmt_modal_field vmt_modal_field_half' },
+                        h('label', { class: 'vmt_modal_label' }, 'Amount (gold)'),
+                        h('input', {
+                            type: 'number',
+                            class: 'vmt_modal_input',
+                            id: 'vmt_bounty_amount',
+                            value: bounty.amount || 0,
+                            min: 0
+                        })
+                    )
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Reason'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_bounty_reason',
+                        value: bounty.reason || '',
+                        placeholder: 'Why the bounty was placed'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Region'),
+                    h('input', {
+                        type: 'text',
+                        class: 'vmt_modal_input',
+                        id: 'vmt_bounty_region',
+                        value: bounty.region || '',
+                        placeholder: 'Where bounty is active'
+                    })
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Known Hunters (one per line)'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_bounty_hunters',
+                        placeholder: 'The Shadow\nIron Blade Guild'
+                    }, (bounty.hunters || []).join('\n'))
+                )
+            );
+            bodyEl.appendChild(
+                h('div', { class: 'vmt_modal_field' },
+                    h('label', { class: 'vmt_modal_label' }, 'Notes'),
+                    h('textarea', {
+                        class: 'vmt_modal_textarea',
+                        id: 'vmt_bounty_notes',
+                        placeholder: 'Additional notes...'
+                    }, bounty.notes || '')
+                )
+            );
+            footerEl.appendChild(
+                h('button', {
+                    class: 'vmt_btn vmt_btn_primary',
+                    onclick: () => {
+                        const huntersText = document.getElementById('vmt_bounty_hunters').value.trim();
+                        const hunterLines = huntersText ? huntersText.split('\n').filter(l => l.trim()) : [];
+                        const newBounty = {
+                            issuer: document.getElementById('vmt_bounty_issuer').value.trim(),
+                            amount: parseInt(document.getElementById('vmt_bounty_amount').value, 10) || 0,
+                            reason: document.getElementById('vmt_bounty_reason').value.trim(),
+                            region: document.getElementById('vmt_bounty_region').value.trim(),
+                            hunters: hunterLines.map(l => l.trim()),
+                            notes: document.getElementById('vmt_bounty_notes').value.trim(),
+                            status: bounty.status || 'Active'
+                        };
+                        if (newBounty.issuer) {
+                            data.onSave(newBounty);
+                            closeModal();
+                        }
+                    }
+                }, 'Save')
+            );
+            footerEl.appendChild(
+                h('button', { class: 'vmt_btn', onclick: closeModal }, 'Cancel')
+            );
+            break;
+
         default:
             titleEl.textContent = 'Modal';
             bodyEl.textContent = 'Unknown modal type';
@@ -2091,6 +2657,18 @@ function render() {
             break;
         case 'affinities':
             body.appendChild(renderAffinitiesTab(openModal, render));
+            break;
+        case 'contracts':
+            body.appendChild(renderContractsTab(openModal, render));
+            break;
+        case 'properties':
+            body.appendChild(renderPropertiesTab(openModal, render));
+            break;
+        case 'transformations':
+            body.appendChild(renderTransformationsTab(openModal, render));
+            break;
+        case 'bounties':
+            body.appendChild(renderBountiesTab(openModal, render));
             break;
         default:
             body.textContent = 'Unknown tab';
