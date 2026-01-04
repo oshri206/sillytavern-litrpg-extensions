@@ -298,3 +298,232 @@
 
 /* Allow user to hide/show panel */
 .vct4_hidden{ display:none !important; }
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   Enhanced UI Elements for Skills, Spells, Traits Tabs
+   ────────────────────────────────────────────────────────────────────────────── */
+
+/* Filter Bar */
+.vct4_filter_bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(0,0,0,.15);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+}
+
+.vct4_filter_group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vct4_filter_label {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: .8;
+}
+
+.vct4_select {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.25);
+  color: inherit;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  min-width: 90px;
+}
+.vct4_select:focus { outline: none; border-color: rgba(140,70,255,.55); }
+
+.vct4_btn_add {
+  margin-left: auto;
+  background: rgba(70,180,100,.12);
+  border-color: rgba(70,180,100,.35);
+}
+.vct4_btn_add:hover {
+  background: rgba(70,180,100,.20);
+  border-color: rgba(70,180,100,.50);
+}
+
+.vct4_btn_primary {
+  background: rgba(140,70,255,.18);
+  border-color: rgba(140,70,255,.45);
+}
+.vct4_btn_primary:hover {
+  background: rgba(140,70,255,.28);
+  border-color: rgba(140,70,255,.60);
+}
+
+.vct4_btn_small {
+  padding: 3px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.vct4_btn_tiny {
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  min-width: 22px;
+}
+
+/* Clickable Cards */
+.vct4_card_clickable {
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease;
+}
+.vct4_card_clickable:hover {
+  border-color: rgba(140,70,255,.35);
+  background: rgba(140,70,255,.06);
+}
+
+.vct4_card_details {
+  font-size: 12px;
+  opacity: .8;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+/* Proficiencies Grid */
+.vct4_prof_grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 500px) {
+  .vct4_prof_grid { grid-template-columns: 1fr; }
+}
+
+.vct4_prof_subsection {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255,255,255,.02);
+}
+
+.vct4_prof_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.vct4_prof_title {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.vct4_prof_empty {
+  font-size: 12px;
+  opacity: .6;
+  font-style: italic;
+}
+
+.vct4_prof_list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vct4_prof_item {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+  background: rgba(255,255,255,.03);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .1s ease;
+}
+.vct4_prof_item:hover {
+  background: rgba(140,70,255,.08);
+}
+
+.vct4_prof_name {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.vct4_prof_desc {
+  font-size: 11px;
+  opacity: .7;
+}
+
+/* Spell Slots */
+.vct4_slots_grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vct4_slot_tracker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+}
+
+.vct4_slot_level {
+  font-weight: 800;
+  font-size: 12px;
+  min-width: 32px;
+}
+
+.vct4_slot_controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vct4_slot_display {
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.vct4_slot_max_label {
+  font-size: 11px;
+  opacity: .7;
+  margin-left: 6px;
+}
+
+.vct4_input_tiny {
+  width: 42px !important;
+  min-width: 42px !important;
+  padding: 3px 5px;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Modal Enhancements */
+.vct4_modal_footer {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+.vct4_modal_form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vct4_textarea {
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* Ensure select in modal matches input styling */
+.vct4_modal_body .vct4_select {
+  width: 100%;
+  padding: 8px 10px;
+}
