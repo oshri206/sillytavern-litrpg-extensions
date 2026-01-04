@@ -309,15 +309,54 @@ function newEmptyState() {
   };
 }
 
+/**
+ * Get SillyTavern context with consistent access pattern
+ * @returns {Object|null} ST context or null if unavailable
+ */
+function getSTContext() {
+  try {
+    // Try global SillyTavern object first (preferred)
+    if (typeof SillyTavern !== 'undefined' && SillyTavern?.getContext) {
+      return SillyTavern.getContext();
+    }
+    // Fall back to imported getContext
+    if (typeof getContext === 'function') {
+      return getContext();
+    }
+    return null;
+  } catch (e) {
+    console.error('[Diplomacy] Error getting ST context:', e);
+    return null;
+  }
+}
+
 function getChatMetadata() {
-  const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-  return ctx?.chatMetadata;
+  const ctx = getSTContext();
+  return ctx?.chatMetadata ?? null;
 }
 
 async function saveChatMetadata() {
-  const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-  if (ctx?.saveMetadata) return await ctx.saveMetadata();
-  if (ctx?.saveMetadataDebounced) return await ctx.saveMetadataDebounced();
+  const ctx = getSTContext();
+  if (!ctx) {
+    console.warn('[Diplomacy] Cannot save metadata: ST context unavailable');
+    return false;
+  }
+
+  try {
+    if (typeof ctx.saveMetadata === 'function') {
+      await ctx.saveMetadata();
+      return true;
+    }
+    if (typeof ctx.saveMetadataDebounced === 'function') {
+      await ctx.saveMetadataDebounced();
+      return true;
+    }
+    console.warn('[Diplomacy] No save method available on ST context');
+    return false;
+  } catch (e) {
+    console.error('[Diplomacy] Error saving metadata:', e);
+    return false;
+  }
 }
 
 function getChatState() {
@@ -1737,7 +1776,7 @@ function registerEvents() {
   eventSource.on(event_types.MESSAGE_RECEIVED, (msgId) => {
     setTimeout(async () => {
       try {
-        const ctx = getContext?.() || SillyTavern?.getContext?.();
+        const ctx = getSTContext();
         if (!ctx?.chat) return;
         
         const msg = ctx.chat.find(m => m.mes_id === msgId) || ctx.chat[ctx.chat.length - 1];

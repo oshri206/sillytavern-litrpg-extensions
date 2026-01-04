@@ -127,16 +127,56 @@ function newEmptyState() {
 // ──────────────────────────────────────────────────────────────────────────────
 // Chat metadata helpers
 // ──────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get SillyTavern context with consistent access pattern
+ * @returns {Object|null} ST context or null if unavailable
+ */
+function getSTContext() {
+  try {
+    // Try global SillyTavern object first (preferred)
+    if (typeof SillyTavern !== 'undefined' && SillyTavern?.getContext) {
+      return SillyTavern.getContext();
+    }
+    // Fall back to imported getContext
+    if (typeof getContext === 'function') {
+      return getContext();
+    }
+    return null;
+  } catch (e) {
+    console.error('[VCTv4] Error getting ST context:', e);
+    return null;
+  }
+}
+
 function getChatMetadata() {
-  const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-  return ctx?.chatMetadata;
+  const ctx = getSTContext();
+  return ctx?.chatMetadata ?? null;
 }
 
 async function saveChatMetadata() {
-  const ctx = SillyTavern?.getContext ? SillyTavern.getContext() : (getContext ? getContext() : null);
-  if (ctx?.saveMetadata) return await ctx.saveMetadata();
-  // Older builds sometimes expose debounced saver
-  if (ctx?.saveMetadataDebounced) return await ctx.saveMetadataDebounced();
+  const ctx = getSTContext();
+  if (!ctx) {
+    console.warn('[VCTv4] Cannot save metadata: ST context unavailable');
+    return false;
+  }
+
+  try {
+    if (typeof ctx.saveMetadata === 'function') {
+      await ctx.saveMetadata();
+      return true;
+    }
+    // Older builds sometimes expose debounced saver
+    if (typeof ctx.saveMetadataDebounced === 'function') {
+      await ctx.saveMetadataDebounced();
+      return true;
+    }
+    console.warn('[VCTv4] No save method available on ST context');
+    return false;
+  } catch (e) {
+    console.error('[VCTv4] Error saving metadata:', e);
+    return false;
+  }
 }
 
 function getChatState() {
@@ -1008,8 +1048,8 @@ async function seedFromSources(st, settings) {
 
 async function seedFromCharacterCard(st) {
   try {
-    const ctx = SillyTavern.getContext();
-    const char = ctx?.characters?.[ctx.characterId];
+    const ctx = getSTContext();
+    const char = ctx?.characters?.[ctx?.characterId];
     if (!char) return;
     // Prefer name/class/race if present in card extensions, else keep Lia defaults.
     if (char.name && !st._meta.seededFromCard) {
@@ -1521,7 +1561,7 @@ async function syncRebuild() {
   await seedFromSources(st, s);
 
   // Replay chat assistant messages to rebuild changes
-  const ctx = SillyTavern.getContext();
+  const ctx = getSTContext();
   const chat = ctx?.chat ?? [];
   setStatus(`Sync/Rebuild: replaying ${chat.length} messages...`);
 
@@ -1646,7 +1686,8 @@ function registerEvents() {
   eventSource.on(event_types.MESSAGE_RECEIVED, async (data) => {
     try {
       const msg = data?.message ?? data?.mes ?? '';
-      const isAssistant = data?.is_user === false || data?.name && data?.name !== (SillyTavern.getContext()?.name1);
+      const ctx = getSTContext();
+      const isAssistant = data?.is_user === false || (data?.name && data?.name !== ctx?.name1);
       // Better: if data has a message object
       if (typeof data?.message === 'object' && data.message?.is_user === false) {
         await processNewAssistantMessage(data.message.mes || '');
